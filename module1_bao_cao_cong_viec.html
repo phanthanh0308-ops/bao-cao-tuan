@@ -254,8 +254,7 @@ select.cin{cursor:pointer}
     <div class="stat-card"><div class="stat-lbl">Tổng task</div><div class="stat-val cv-blue" id="sTotal">0</div></div>
     <div class="stat-card"><div class="stat-lbl">Hoàn thành</div><div class="stat-val cv-green" id="sDone">0</div></div>
     <div class="stat-card"><div class="stat-lbl">Đang làm</div><div class="stat-val cv-blue" id="sDoing">0</div></div>
-    <div class="stat-card"><div class="stat-lbl">Chờ/chưa có</div><div class="stat-val cv-amber" id="sPend">0</div></div>
-    <div class="stat-card"><div class="stat-lbl">Ưu tiên P1</div><div class="stat-val cv-red" id="sP1">0</div></div>
+    <div class="stat-card"><div class="stat-lbl">Chưa có timeline</div><div class="stat-val cv-amber" id="sNoTL">0</div></div>
   </div>
 
   <div class="tbl-card" id="tblCard">
@@ -520,7 +519,8 @@ function createWeek() {
   setSave('Đang tạo tuần trên Google Sheets...');
 
   // Goi action createWeek - tao sheet tab moi
-  apiPost({action:'createWeek', week: name}, function(data, err) {
+  var editorInfo = authUser ? { email: authUser.email, name: authUser.name } : null;
+  apiPost({action:'createWeek', week: name, _editor: editorInfo}, function(data, err) {
     showLoading(false);
     if (err || !data || data.error) {
       showToast('Lỗi tạo tuần: '+(err||(data&&data.error)||''),'err');
@@ -537,7 +537,13 @@ function createWeek() {
 
     dirty = false;
     switchWeek(name);
-    showToast('Đã tạo sheet tab "'+data.sheetName+'" trên Google Sheets!','ok');
+
+    // Thong bao dep co ke ca copy task
+    if (data.copiedCount > 0) {
+      showToast('Đã tạo tuần "'+name+'" và copy '+data.copiedCount+' task chưa Done từ tuần "'+data.fromWeek+'"','ok');
+    } else {
+      showToast('Đã tạo tuần "'+name+'" (không có task nào để copy)','ok');
+    }
   });
 }
 
@@ -699,17 +705,16 @@ function autoH(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'
 function resizeAll(){ var els=document.querySelectorAll('textarea.cin'); for(var i=0;i<els.length;i++) autoH(els[i]); }
 
 function updateStats() {
-  var t=rows.length,done=0,doing=0,p1=0;
+  var t=rows.length, done=0, doing=0, noTL=0;
   for (var i=0;i<rows.length;i++){
     if(rows[i].ts==='Done') done++;
     else if(rows[i].ts==='Dang lam') doing++;
-    if(rows[i].pri==='P1') p1++;
+    if(rows[i].ts==='Chua co timeline') noTL++;
   }
   document.getElementById('sTotal').textContent=t;
   document.getElementById('sDone').textContent=done;
   document.getElementById('sDoing').textContent=doing;
-  document.getElementById('sPend').textContent=t-done-doing;
-  document.getElementById('sP1').textContent=p1;
+  document.getElementById('sNoTL').textContent=noTL;
 }
 
 // ══════════════════════════════════════════════
