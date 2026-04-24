@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 1 — Báo cáo công việc</title>
+<style>
+:root{
+  --bg:#f4f6fb;--white:#fff;--border:#dde1ea;--border2:#b8c0d4;
+  --accent:#1a56db;--accent-light:#e8f0fe;
+  --green:#0e9f6e;--green-light:#f0fdf4;
+  --amber:#b45309;--amber-light:#fef3c7;
+  --red:#dc2626;--red-light:#fee2e2;
+  --text:#111827;--text2:#374151;--text3:#9ca3af;
+  --hbg:#1e3a5f;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  --mono:'Courier New',Courier,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:var(--sans);font-size:14px;color:var(--text);min-height:100vh;padding-bottom:72px}
+
+/* TOPBAR */
+.topbar{background:var(--hbg);color:#fff;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.mod-tag{background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:4px;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.75);padding:3px 8px;letter-spacing:1.5px}
+.topbar-title{font-size:15px;font-weight:600}
+.sync-status{font-size:11px;font-family:var(--mono);padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.2)}
+.sync-status.ok{background:rgba(14,159,110,0.25);color:#6ee7b7}
+.sync-status.err{background:rgba(220,38,38,0.25);color:#fca5a5}
+.sync-status.loading{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6)}
+.topbar-btns{display:flex;gap:7px;flex-wrap:wrap}
+.tbtn{padding:5px 12px;border-radius:5px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.09);color:#fff;font-size:12px;cursor:pointer;font-family:var(--sans);transition:background .15s}
+.tbtn:hover{background:rgba(255,255,255,0.18)}
+.tbtn:disabled{opacity:.4;cursor:default;pointer-events:none}
+
+/* SETUP BANNER */
+.setup-banner{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:14px 18px;margin:16px 24px;font-size:13px;line-height:1.7}
+.setup-banner strong{color:#92400e}
+.setup-banner code{background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:12px;color:#78350f}
+.setup-input-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.setup-input{border:1px solid #fcd34d;border-radius:5px;padding:6px 10px;font-size:12px;font-family:var(--mono);width:420px;background:#fff;color:var(--text)}
+.setup-input:focus{outline:2px solid var(--accent)}
+
+/* WEEK BAR */
+.weekbar{background:var(--white);border-bottom:1px solid var(--border);padding:9px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wlabel{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+.wselect{border:1px solid var(--border2);border-radius:5px;padding:5px 9px;font-size:13px;color:var(--text2);background:var(--white);cursor:pointer}
+.sep{color:var(--border2);margin:0 2px}
+
+/* CALENDAR */
+.cal-wrap{position:relative;display:inline-block}
+.cal-trigger{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border2);border-radius:5px;padding:5px 11px;background:var(--white);font-family:var(--mono);font-size:12px;color:var(--text2);cursor:pointer;min-width:170px;transition:border-color .13s}
+.cal-trigger:hover,.cal-trigger.open{border-color:var(--accent);color:var(--accent)}
+.cal-popup{position:absolute;top:calc(100% + 6px);left:0;background:var(--white);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.13);padding:16px;width:280px;z-index:999;display:none}
+.cal-popup.open{display:block}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-navbtn{width:28px;height:28px;border-radius:5px;border:1px solid var(--border);background:var(--white);cursor:pointer;font-size:15px;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:all .1s}
+.cal-navbtn:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.cal-mlabel{font-weight:600;font-size:13px;color:var(--text)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dow{text-align:center;font-size:9px;font-weight:700;color:var(--text3);padding:4px 0;font-family:var(--mono)}
+.cal-day{text-align:center;padding:6px 2px;font-size:12px;font-family:var(--mono);border-radius:5px;cursor:pointer;color:var(--text2);transition:all .1s;user-select:none}
+.cal-day:not(.empty):hover{background:var(--accent-light);color:var(--accent)}
+.cal-day.empty{cursor:default;color:transparent}
+.cal-day.today{font-weight:700;color:var(--accent)}
+.cal-day.in-range{background:var(--accent-light);border-radius:0}
+.cal-day.sel-start{background:var(--accent);color:#fff;font-weight:600;border-radius:5px 0 0 5px}
+.cal-day.sel-end{background:var(--accent);color:#fff;font-weight:600;border-radius:0 5px 5px 0}
+.cal-day.sel-start.sel-end{border-radius:5px}
+.cal-hint{font-size:10px;color:var(--text3);font-family:var(--mono);text-align:center;margin-bottom:9px}
+.cal-foot{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.cal-sel-lbl{flex:1;font-size:10px;color:var(--text3);font-family:var(--mono)}
+.cal-sel-lbl b{color:var(--accent);font-weight:500}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:6px;border:1px solid var(--border2);background:var(--white);color:var(--text2);font-size:13px;cursor:pointer;transition:all .13s;white-space:nowrap}
+.btn:hover{background:var(--bg);border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default;pointer-events:none}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:#1648c0;color:#fff}
+.btn-green{background:var(--green);border-color:var(--green);color:#fff}
+.btn-green:hover{background:#0a7d57;color:#fff}
+.btn-danger{border-color:#fca5a5;color:var(--red);background:var(--white)}
+.btn-danger:hover{background:var(--red-light)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-xs{padding:2px 7px;font-size:11px;border-radius:4px}
+
+/* WRAPPER & STATS */
+.wrapper{padding:20px 24px}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:11px;margin-bottom:18px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:13px 15px}
+.stat-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.stat-val{font-size:24px;font-weight:700;font-family:var(--mono)}
+.cv-blue{color:var(--accent)} .cv-green{color:var(--green)} .cv-amber{color:var(--amber)} .cv-red{color:var(--red)}
+
+/* TABLE */
+.tbl-card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tbl-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.tbl-bar-lbl{font-size:13px;font-weight:500;color:var(--text2)}
+.tbl-bar-btns{display:flex;gap:7px}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:860px}
+thead tr{background:var(--hbg)}
+th{color:#fff;font-size:11px;font-weight:500;padding:10px 9px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);white-space:nowrap}
+th:last-child{border-right:none}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f0f5ff}
+td{padding:6px 8px;vertical-align:middle;font-size:13px;color:var(--text);border-right:1px solid var(--border)}
+td:last-child{border-right:none}
+.td-stt{text-align:center;color:var(--text3);font-family:var(--mono);font-size:11px;width:40px}
+.cin{width:100%;border:none;background:transparent;font-family:var(--sans);font-size:13px;color:var(--text);padding:3px 4px;border-radius:4px;resize:none;line-height:1.5;min-height:28px}
+.cin:focus{outline:2px solid var(--accent);background:var(--white)}
+.cin.ctr{text-align:center}
+select.cin{cursor:pointer}
+.empty-td{text-align:center;padding:40px;color:var(--text3);font-size:13px;border:none}
+.empty-ico{font-size:26px;display:block;margin-bottom:8px;opacity:.35}
+
+/* SHEET LINK BADGE */
+.sheet-link{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--accent);font-family:var(--mono);text-decoration:none;padding:2px 7px;border-radius:4px;border:1px solid var(--accent-light);background:var(--accent-light);transition:all .13s}
+.sheet-link:hover{background:var(--accent);color:#fff}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:absolute;inset:0;background:rgba(255,255,255,0.82);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:10px}
+.spinner{width:28px;height:28px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tbl-card{position:relative}
+
+/* SAVE BAR */
+.savebar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;z-index:50;box-shadow:0 -2px 10px rgba(0,0,0,0.06)}
+.save-lbl{font-size:12px;color:var(--text3);font-family:var(--mono)}
+.save-btns{display:flex;gap:8px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:6px;vertical-align:middle;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* TOAST */
+.toast{position:fixed;top:18px;right:22px;background:#1f2937;color:#fff;padding:10px 18px;border-radius:7px;font-size:13px;font-family:var(--mono);opacity:0;transform:translateY(-8px);transition:all .2s;z-index:1000;pointer-events:none;max-width:340px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{background:var(--green)} .toast.err{background:var(--red)} .toast.info{background:#1e3a5f}
+
+/* MODAL XAC NHAN XOA */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--white);border-radius:12px;padding:28px 28px 22px;max-width:380px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,0.18)}
+.modal-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px}
+.modal-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="mod-tag">MODULE 1</div>
+    <div class="topbar-title">Báo cáo công việc</div>
+    <div class="sync-status loading" id="syncStatus">● Chưa kết nối</div>
+  </div>
+  <div class="topbar-btns">
+    <button class="tbtn" id="btnReload" onclick="reloadFromSheet()" disabled>↻ Tải lại từ Sheets</button>
+    <button class="tbtn" onclick="exportCSV()">Xuất CSV</button>
+  </div>
+</div>
+
+<!-- SETUP BANNER -->
+<div class="setup-banner" id="setupBanner">
+  <strong>⚠ Chưa cấu hình Google Sheets</strong><br>
+  Dán <strong>Web App URL</strong> của Google Apps Script vào ô dưới, rồi bấm <strong>Lưu &amp; Kết nối</strong>.<br>
+  <small>Xem file <code>Code_GoogleAppsScript.gs</code> để biết cách tạo Web App URL.</small>
+  <div class="setup-input-row">
+    <input type="text" class="setup-input" id="apiUrlInput" placeholder="https://script.google.com/macros/s/AKfy.../exec">
+    <button class="btn btn-primary btn-sm" onclick="saveApiUrl()">Lưu &amp; Kết nối</button>
+    <button class="btn btn-sm" onclick="clearApiUrl()">Xóa cấu hình</button>
+  </div>
+</div>
+
+<!-- WEEK BAR -->
+<div class="weekbar">
+  <span class="wlabel">Tuần:</span>
+  <select class="wselect" id="weekSel" onchange="switchWeek(this.value)">
+    <option value="">-- Chọn tuần --</option>
+  </select>
+  <span class="sep">|</span>
+  <span class="wlabel">Tạo tuần mới:</span>
+  <div class="cal-wrap" id="calWrap">
+    <div class="cal-trigger" id="calTrig" onclick="calToggle()">
+      <span style="font-size:14px">📅</span>
+      <span id="calTxt" style="flex:1">Chọn khoảng ngày...</span>
+      <span style="font-size:10px;color:var(--text3)">▼</span>
+    </div>
+    <div class="cal-popup" id="calPop">
+      <div class="cal-nav">
+        <button class="cal-navbtn" onclick="calMove(-1)">‹</button>
+        <div class="cal-mlabel" id="calML"></div>
+        <button class="cal-navbtn" onclick="calMove(1)">›</button>
+      </div>
+      <div class="cal-hint" id="calHint">Chọn ngày bắt đầu tuần</div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-foot">
+        <div class="cal-sel-lbl" id="calLbl">Chưa chọn</div>
+        <button class="btn btn-xs" onclick="calReset()">Đặt lại</button>
+        <button class="btn btn-xs btn-primary" id="calOK" onclick="calConfirm()" disabled>Xác nhận</button>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn-sm btn-primary" id="btnCreate" onclick="createWeek()" disabled>+ Tạo tuần</button>
+  <button class="btn btn-sm btn-danger" id="btnDelete" onclick="confirmDeleteWeek()" style="margin-left:auto" disabled>Xóa dữ liệu tuần</button>
+</div>
+
+<!-- MAIN -->
+<div class="wrapper">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-lbl">Tổng task</div><div class="stat-val cv-blue" id="sTotal">0</div></div>
+    <div class="stat-card"><div class="stat-lbl">Hoàn thành</div><div class="stat-val cv-green" id="sDone">0</div></div>
+    <div class="stat-card"><div class="stat-lbl">Đang làm</div><div class="stat-val cv-blue" id="sDoing">0</div></div>
+    <div class="stat-card"><div class="stat-lbl">Chờ/chưa có</div><div class="stat-val cv-amber" id="sPend">0</div></div>
+    <div class="stat-card"><div class="stat-lbl">Ưu tiên P1</div><div class="stat-val cv-red" id="sP1">0</div></div>
+  </div>
+
+  <div class="tbl-card" id="tblCard">
+    <div id="tblLoading" class="loading-overlay" style="display:none"><div class="spinner"></div></div>
+    <div class="tbl-bar">
+      <div class="tbl-bar-lbl" id="tblLbl">Chọn hoặc tạo tuần để bắt đầu</div>
+      <div class="tbl-bar-btns">
+        <a id="sheetLink" class="sheet-link" href="#" target="_blank" style="display:none">
+          📊 Mở Sheet tab
+        </a>
+        <button class="btn btn-sm" id="btnAdd" onclick="addRow()" disabled>+ Thêm dòng</button>
+        <button class="btn btn-sm btn-primary" id="btnSave" onclick="saveData()" disabled>☁ Lưu lên Sheets</button>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th style="width:40px">#</th>
+          <th style="width:120px">Phân hệ</th>
+          <th style="width:195px">Tính năng / Màn hình</th>
+          <th style="width:180px">Mô tả</th>
+          <th style="width:85px">Độ ưu tiên</th>
+          <th style="width:105px">TG thực hiện (ngày)</th>
+          <th style="width:130px">Thời gian hoàn thành</th>
+          <th style="width:180px">Ghi chú</th>
+          <th style="width:46px"></th>
+        </tr></thead>
+        <tbody id="tBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE BAR -->
+<div class="savebar">
+  <div class="save-lbl" id="saveLbl">Chưa chọn tuần</div>
+  <div class="save-btns">
+    <button class="btn" id="btnClear" onclick="clearAll()" disabled>Xóa dữ liệu tuần này</button>
+    <button class="btn btn-green" id="btnSave2" onclick="saveData()" disabled>☁ Lưu lên Google Sheets</button>
+  </div>
+</div>
+
+<!-- MODAL XAC NHAN XOA TUAN -->
+<div class="modal-backdrop" id="deleteModal">
+  <div class="modal">
+    <div class="modal-title">⚠ Xóa dữ liệu tuần này?</div>
+    <div class="modal-desc" id="deleteModalDesc">Hành động này sẽ xóa hẳn sheet tab trên Google Sheets và không thể hoàn tác.</div>
+    <div class="modal-btns">
+      <button class="btn btn-sm" onclick="closeDeleteModal()">Hủy</button>
+      <button class="btn btn-sm btn-danger" onclick="doDeleteWeek()">Xóa hẳn</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIG & STATE
+// ══════════════════════════════════════════════
+var API_KEY = 'api_url_m1';
+var SPREADSHEET_ID_KEY = 'spreadsheet_id_m1';
+
+var PRI = ['P1','P2','P3'];
+var STA = ['Chua co timeline','Dang lam','Done','Dang danh gia','Da gui test','Da release'];
+var STA_VI = ['Chưa có timeline','Đang làm','Done','Đang đánh giá','Đã gửi test','Đã release'];
+var MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+var DOWS = ['CN','T2','T3','T4','T5','T6','T7'];
+
+var apiUrl = '';
+var spreadsheetId = ''; // ID cua Google Sheet (lay tu URL)
+var curWeek = null, rows = [], dirty = false;
+var weeksList = [];
+var cvy = new Date().getFullYear(), cvm = new Date().getMonth();
+var cds = null, cde = null, cstep = 0;
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+function init() {
+  apiUrl = localStorage.getItem(API_KEY) || '';
+  spreadsheetId = localStorage.getItem(SPREADSHEET_ID_KEY) || '';
+
+  var inp = document.getElementById('apiUrlInput');
+  if (apiUrl) {
+    inp.value = apiUrl;
+    document.getElementById('setupBanner').style.display = 'none';
+    fetchWeeks();
+  } else {
+    setSyncStatus('err', 'Chưa cấu hình');
+  }
+  renderTable();
+  calRender();
+}
+
+// ══════════════════════════════════════════════
+//  SETUP API URL
+// ══════════════════════════════════════════════
+function saveApiUrl() {
+  var url = document.getElementById('apiUrlInput').value.trim();
+  if (!url || url.indexOf('https://script.google.com') !== 0) {
+    showToast('URL không hợp lệ! Phải bắt đầu bằng https://script.google.com','err'); return;
+  }
+  apiUrl = url;
+  localStorage.setItem(API_KEY, url);
+
+  // Thu lay spreadsheetId tu URL neu co
+  var idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if (idMatch) {
+    spreadsheetId = idMatch[1];
+    localStorage.setItem(SPREADSHEET_ID_KEY, spreadsheetId);
+  }
+
+  document.getElementById('setupBanner').style.display = 'none';
+  showToast('Đã lưu URL. Đang kết nối...','info');
+  fetchWeeks();
+}
+
+function clearApiUrl() {
+  if (!confirm('Xóa cấu hình API URL?')) return;
+  apiUrl = '';
+  localStorage.removeItem(API_KEY);
+  localStorage.removeItem(SPREADSHEET_ID_KEY);
+  document.getElementById('apiUrlInput').value = '';
+  document.getElementById('setupBanner').style.display = 'block';
+  setSyncStatus('err', 'Chưa cấu hình');
+}
+
+// ══════════════════════════════════════════════
+//  API CALLS
+// ══════════════════════════════════════════════
+function apiGet(params, cb) {
+  if (!apiUrl) { cb(null, 'Chưa cấu hình API URL'); return; }
+  var url = apiUrl + '?' + Object.keys(params).map(function(k){ return k+'='+encodeURIComponent(params[k]); }).join('&');
+  fetch(url, { redirect: 'follow' })
+    .then(function(r){ return r.text(); })
+    .then(function(text){
+      try { cb(JSON.parse(text), null); }
+      catch(e) { cb(null, 'Phản hồi không phải JSON. Kiểm tra lại Web App URL và quyền deploy.'); }
+    })
+    .catch(function(e){ cb(null, e.toString()); });
+}
+
+function apiPost(body, cb) {
+  if (!apiUrl) { cb(null, 'Chưa cấu hình API URL'); return; }
+  fetch(apiUrl, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  })
+    .then(function(r){ return r.text(); })
+    .then(function(text){
+      try { cb(JSON.parse(text), null); }
+      catch(e) { cb(null, 'Phản hồi không phải JSON. Kiểm tra lại Web App URL và quyền deploy.'); }
+    })
+    .catch(function(e){ cb(null, e.toString()); });
+}
+
+// ══════════════════════════════════════════════
+//  FETCH WEEKS LIST
+// ══════════════════════════════════════════════
+function fetchWeeks() {
+  setSyncStatus('loading', 'Đang tải...');
+  document.getElementById('btnReload').disabled = true;
+  apiGet({action:'getWeeks'}, function(data, err) {
+    document.getElementById('btnReload').disabled = false;
+    if (err || !data || data.error) {
+      setSyncStatus('err', 'Lỗi kết nối');
+      showToast('Lỗi tải danh sách tuần: '+(err||(data&&data.error)||''),'err');
+      return;
+    }
+    weeksList = data.weeks || [];
+    buildWeekSel();
+    setSyncStatus('ok', 'Đã kết nối Sheets');
+    showToast('Đã tải '+weeksList.length+' tuần từ Google Sheets','ok');
+  });
+}
+
+function reloadFromSheet() {
+  if (!apiUrl) { showToast('Chưa cấu hình API URL!','err'); return; }
+  fetchWeeks();
+  if (curWeek) {
+    if (dirty && !confirm('Có thay đổi chưa lưu. Tải lại sẽ mất dữ liệu chưa lưu. Tiếp tục?')) return;
+    fetchRows(curWeek);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  WEEK SELECT
+// ══════════════════════════════════════════════
+function buildWeekSel() {
+  var s = document.getElementById('weekSel');
+  var cur = s.value;
+  s.innerHTML = '<option value="">-- Chọn tuần --</option>';
+  // Sort moi nhat len dau
+  var sorted = weeksList.slice().sort().reverse();
+  for (var i = 0; i < sorted.length; i++) {
+    var o = document.createElement('option');
+    o.value = sorted[i];
+    o.textContent = 'Tuần ' + sorted[i];
+    s.appendChild(o);
+  }
+  if (cur && weeksList.indexOf(cur) >= 0) s.value = cur;
+}
+
+function switchWeek(name) {
+  if (!name) {
+    curWeek = null; rows = [];
+    renderTable(); setEnabled(false);
+    setLbl('Chọn hoặc tạo tuần để bắt đầu');
+    setSave('Chưa chọn tuần');
+    document.getElementById('btnDelete').disabled = true;
+    updateSheetLink(null);
+    return;
+  }
+  if (dirty && !confirm('Có thay đổi chưa lưu lên Sheets. Tiếp tục?')) {
+    document.getElementById('weekSel').value = curWeek || ''; return;
+  }
+  curWeek = name;
+  rows = [];
+  dirty = false;
+  setLbl('📅 Tuần: ' + name);
+  setSave('Đang tải dữ liệu...');
+  document.getElementById('btnDelete').disabled = false;
+  updateSheetLink(name);
+  fetchRows(name);
+}
+
+function fetchRows(weekName) {
+  showLoading(true);
+  apiGet({action:'getRows', week: weekName}, function(data, err) {
+    showLoading(false);
+    if (err || !data || data.error) {
+      showToast('Lỗi tải dữ liệu tuần: '+(err||(data&&data.error)||''),'err');
+      setSave('Lỗi tải dữ liệu');
+      return;
+    }
+    rows = data.rows || [];
+    dirty = false;
+    renderTable();
+    setEnabled(true);
+    setSave('Đã tải từ Sheets — '+rows.length+' task');
+    showToast('Đã tải tuần '+weekName+' ('+rows.length+' task)','ok');
+  });
+}
+
+// ══════════════════════════════════════════════
+//  CREATE WEEK — tao sheet tab moi tren Sheets
+// ══════════════════════════════════════════════
+function createWeek() {
+  var name = document.getElementById('calTxt').textContent.trim();
+  if (!name || name === 'Chọn khoảng ngày...') { showToast('Chọn khoảng ngày trước!','err'); return; }
+  if (weeksList.indexOf(name) >= 0) { showToast('Tuần "'+name+'" đã tồn tại!','err'); return; }
+  if (!apiUrl) { showToast('Chưa cấu hình API URL!','err'); return; }
+
+  showLoading(true);
+  setSave('Đang tạo tuần trên Google Sheets...');
+
+  // Goi action createWeek - tao sheet tab moi
+  apiPost({action:'createWeek', week: name}, function(data, err) {
+    showLoading(false);
+    if (err || !data || data.error) {
+      showToast('Lỗi tạo tuần: '+(err||(data&&data.error)||''),'err');
+      setSave('Tạo tuần thất bại');
+      return;
+    }
+
+    weeksList.push(name);
+    buildWeekSel();
+    document.getElementById('weekSel').value = name;
+
+    // Reset calendar
+    calReset();
+
+    dirty = false;
+    switchWeek(name);
+    showToast('Đã tạo sheet tab "'+data.sheetName+'" trên Google Sheets!','ok');
+  });
+}
+
+// ══════════════════════════════════════════════
+//  DELETE WEEK — xoa han sheet tab
+// ══════════════════════════════════════════════
+function confirmDeleteWeek() {
+  if (!curWeek) { showToast('Chưa chọn tuần!','err'); return; }
+  document.getElementById('deleteModalDesc').innerHTML =
+    'Xóa dữ liệu tuần <strong>"'+curWeek+'"</strong>:<br>• Sheet tab <strong>"'+weekToSheetName(curWeek)+'"</strong> sẽ được <strong>giữ lại</strong> trên Google Sheets<br>• Toàn bộ dữ liệu bên trong (từ dòng 2 trở đi) sẽ bị xóa sạch<br>• Tuần này sẽ biến mất khỏi danh sách chọn tuần<br><br>Hành động không thể hoàn tác!';
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('open');
+}
+
+function doDeleteWeek() {
+  closeDeleteModal();
+  showLoading(true);
+  apiPost({action:'deleteWeek', week: curWeek}, function(data, err) {
+    showLoading(false);
+    if (err || !data || data.error) {
+      showToast('Lỗi xóa tuần: '+(err||(data&&data.error)||''),'err'); return;
+    }
+    var deleted = curWeek;
+    var idx = weeksList.indexOf(curWeek);
+    if (idx >= 0) weeksList.splice(idx, 1);
+    buildWeekSel();
+    curWeek = null; rows = []; dirty = false;
+    switchWeek('');
+    showToast('Đã xóa dữ liệu tuần "'+deleted+'" — Sheet tab vẫn được giữ lại','ok');
+  });
+}
+
+// Helper: chuyen ten tuan sang ten sheet (giong ben GAS)
+function weekToSheetName(weekName) {
+  return 'W_' + weekName.replace(/\//g, '_').replace(/[\\\?\*\[\]]/g, '-');
+}
+
+// Cap nhat link mo Sheet tab
+function updateSheetLink(weekName) {
+  var link = document.getElementById('sheetLink');
+  if (!weekName) { link.style.display = 'none'; return; }
+  
+  // Lay spreadsheetId tu localStorage
+  var sid = localStorage.getItem(SPREADSHEET_ID_KEY) || '';
+  if (sid) {
+    var sheetName = weekToSheetName(weekName);
+    // Link truc tiep vao sheet tab (GID khong biet truoc, dung link tim theo ten)
+    link.href = 'https://docs.google.com/spreadsheets/d/'+sid+'/edit';
+    link.style.display = 'inline-flex';
+  } else {
+    link.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  SAVE DATA
+// ══════════════════════════════════════════════
+function saveData() {
+  if (!curWeek) { showToast('Chưa chọn tuần!','err'); return; }
+  if (!apiUrl) { showToast('Chưa cấu hình API URL!','err'); return; }
+  showLoading(true);
+  setSave('Đang lưu lên Google Sheets...');
+  apiPost({action:'saveWeek', week: curWeek, rows: rows}, function(data, err) {
+    showLoading(false);
+    if (err || !data || data.error) {
+      showToast('Lỗi lưu: '+(err||(data&&data.error)||''),'err');
+      setSave('<span class="dot"></span>Lưu thất bại — thử lại');
+      return;
+    }
+    dirty = false;
+    setSave('Đã lưu lên Sheets lúc '+now()+' ('+rows.length+' task)');
+    showToast('Đã lưu lên Google Sheets thành công!','ok');
+  });
+}
+
+function clearAll() {
+  if (!curWeek) return;
+  if (!confirm('Xóa hết '+rows.length+' task? (Cần bấm Lưu để xóa trên Sheets)')) return;
+  rows = []; mark(); renderTable();
+}
+
+function exportCSV() {
+  if (!curWeek || !rows.length) { showToast('Không có dữ liệu!','err'); return; }
+  var hd=['#','Phân hệ','Tính năng/Màn hình','Mô tả','Độ ưu tiên','TG thực hiện','TG hoàn thành','Ghi chú'];
+  var body=[];
+  for (var i=0;i<rows.length;i++) body.push([i+1,cc(rows[i].ph),cc(rows[i].tn),cc(rows[i].mt),rows[i].pri,cc(rows[i].tg),cc(rows[i].sta),cc(rows[i].gc)].join(','));
+  var blob=new Blob(['\uFEFF'+[hd.join(',')].concat(body).join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='m1_'+curWeek+'.csv'; a.click();
+  showToast('Đã xuất CSV','ok');
+}
+
+function cc(v){ return '"'+(v||'').replace(/"/g,'""')+'"'; }
+
+// ══════════════════════════════════════════════
+//  TABLE RENDER
+// ══════════════════════════════════════════════
+function renderTable() {
+  var tb = document.getElementById('tBody');
+  if (!curWeek || !rows.length) {
+    tb.innerHTML = '<tr><td colspan="9" class="empty-td"><span class="empty-ico">📋</span>'
+      +(curWeek ? 'Chưa có task. Bấm + Thêm dòng.' : 'Chọn hoặc tạo một tuần để bắt đầu.')
+      +'</td></tr>';
+    updateStats(); return;
+  }
+  var html = '';
+  for (var i = 0; i < rows.length; i++) html += rowHTML(rows[i], i);
+  tb.innerHTML = html;
+  updateStats();
+  setTimeout(resizeAll, 30);
+}
+
+function rowHTML(r, i) {
+  var priOpts = '';
+  for (var p = 0; p < PRI.length; p++) priOpts += '<option value="'+PRI[p]+'"'+(r.pri===PRI[p]?' selected':'')+'>'+PRI[p]+'</option>';
+  var staOpts = '';
+  for (var s = 0; s < STA.length; s++) staOpts += '<option value="'+STA[s]+'"'+(r.sta===STA[s]?' selected':'')+'>'+STA_VI[s]+'</option>';
+  return '<tr>'
+    +'<td class="td-stt">'+(i+1)+'</td>'
+    +'<td><textarea class="cin" rows="2" oninput="autoH(this)" onchange="setF('+i+',\'ph\',this.value);mark()">'+escH(r.ph||'')+'</textarea></td>'
+    +'<td><textarea class="cin" rows="2" oninput="autoH(this)" onchange="setF('+i+',\'tn\',this.value);mark()">'+escH(r.tn||'')+'</textarea></td>'
+    +'<td><textarea class="cin" rows="2" oninput="autoH(this)" onchange="setF('+i+',\'mt\',this.value);mark()">'+escH(r.mt||'')+'</textarea></td>'
+    +'<td style="text-align:center"><select class="cin ctr" onchange="setF('+i+',\'pri\',this.value);mark();updateStats()">'+priOpts+'</select></td>'
+    +'<td><input type="text" class="cin ctr" value="'+escH(r.tg||'')+'" placeholder="0.5" onchange="setF('+i+',\'tg\',this.value);mark()"></td>'
+    +'<td><select class="cin" onchange="setF('+i+',\'sta\',this.value);mark();updateStats()">'+staOpts+'</select></td>'
+    +'<td><textarea class="cin" rows="2" oninput="autoH(this)" onchange="setF('+i+',\'gc\',this.value);mark()">'+escH(r.gc||'')+'</textarea></td>'
+    +'<td style="text-align:center"><button class="btn btn-xs btn-danger" onclick="delRow('+i+')">✕</button></td>'
+    +'</tr>';
+}
+
+function setF(i, f, v) { rows[i][f] = v; }
+function mark() { dirty=true; setSave('<span class="dot"></span>Có thay đổi chưa lưu lên Sheets'); }
+
+function addRow() {
+  if (!curWeek) { showToast('Chọn tuần trước!','err'); return; }
+  rows.push({ph:'',tn:'',mt:'',pri:'P2',tg:'',sta:'Chua co timeline',gc:''});
+  mark(); renderTable();
+  setTimeout(function(){
+    var tb=document.getElementById('tBody');
+    if(tb.lastElementChild) tb.lastElementChild.scrollIntoView({behavior:'smooth',block:'center'});
+  },60);
+}
+
+function delRow(i) {
+  if (!confirm('Xóa dòng '+(i+1)+'?')) return;
+  rows.splice(i,1); mark(); renderTable();
+}
+
+function autoH(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+function resizeAll(){ var els=document.querySelectorAll('textarea.cin'); for(var i=0;i<els.length;i++) autoH(els[i]); }
+
+function updateStats() {
+  var t=rows.length,done=0,doing=0,p1=0;
+  for (var i=0;i<rows.length;i++){
+    if(rows[i].sta==='Done') done++;
+    else if(rows[i].sta==='Dang lam') doing++;
+    if(rows[i].pri==='P1') p1++;
+  }
+  document.getElementById('sTotal').textContent=t;
+  document.getElementById('sDone').textContent=done;
+  document.getElementById('sDoing').textContent=doing;
+  document.getElementById('sPend').textContent=t-done-doing;
+  document.getElementById('sP1').textContent=p1;
+}
+
+// ══════════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════════
+function setEnabled(on){ ['btnAdd','btnSave','btnSave2','btnClear'].forEach(function(id){ document.getElementById(id).disabled=!on; }); }
+function setLbl(h){ document.getElementById('tblLbl').innerHTML=h; }
+function setSave(h){ document.getElementById('saveLbl').innerHTML=h; }
+function now(){ return new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); }
+function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showLoading(on){ document.getElementById('tblLoading').style.display=on?'flex':'none'; }
+function setSyncStatus(type, msg){
+  var el=document.getElementById('syncStatus');
+  el.className='sync-status '+type;
+  el.innerHTML='● '+msg;
+}
+function showToast(msg, type){
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast '+(type||''); el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 3200);
+}
+window.addEventListener('beforeunload',function(e){ if(dirty){ e.preventDefault(); e.returnValue=''; } });
+
+// ══════════════════════════════════════════════
+//  CALENDAR
+// ══════════════════════════════════════════════
+function calToggle(){
+  var p=document.getElementById('calPop'), t=document.getElementById('calTrig');
+  var isOpen=p.classList.contains('open');
+  if(isOpen){ p.classList.remove('open'); t.classList.remove('open'); }
+  else{ p.classList.add('open'); t.classList.add('open'); calRender(); }
+}
+document.addEventListener('click',function(e){
+  var wrap = document.getElementById('calWrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('calPop').classList.remove('open');
+    document.getElementById('calTrig').classList.remove('open');
+  }
+});
+function calMove(d){ cvm+=d; if(cvm>11){cvm=0;cvy++;} if(cvm<0){cvm=11;cvy--;} calRender(); }
+function calRender(){
+  document.getElementById('calML').textContent=MONTHS[cvm]+' '+cvy;
+  var today=new Date(); today.setHours(0,0,0,0);
+  var first=new Date(cvy,cvm,1).getDay();
+  var days=new Date(cvy,cvm+1,0).getDate();
+  var h='';
+  for(var i=0;i<DOWS.length;i++) h+='<div class="cal-dow">'+DOWS[i]+'</div>';
+  for(var i=0;i<first;i++) h+='<div class="cal-day empty">&nbsp;</div>';
+  for(var d=1;d<=days;d++){
+    var dt=new Date(cvy,cvm,d); dt.setHours(0,0,0,0);
+    var cls='cal-day';
+    if(dt.getTime()===today.getTime()) cls+=' today';
+    if(cds&&dt.getTime()===cds.getTime()) cls+=' sel-start';
+    if(cde&&dt.getTime()===cde.getTime()) cls+=' sel-end';
+    if(cds&&cde&&dt>cds&&dt<cde) cls+=' in-range';
+    h+='<div class="'+cls+'" onclick="calPick('+cvy+','+cvm+','+d+')">'+d+'</div>';
+  }
+  document.getElementById('calGrid').innerHTML=h;
+  calUpdateFoot();
+}
+function calPick(y,m,d){
+  var dt=new Date(y,m,d);
+  if(cstep===0||(cds&&cde)){ cds=dt; cde=null; cstep=1; }
+  else{ if(dt<cds){cde=cds;cds=dt;}else{cde=dt;} cstep=0; }
+  document.getElementById('calHint').textContent=cstep===1?'Chọn ngày kết thúc tuần':'Bấm Xác nhận hoặc chọn lại';
+  calRender();
+}
+function calUpdateFoot(){
+  var lbl=document.getElementById('calLbl'), btn=document.getElementById('calOK');
+  if(!cds){lbl.innerHTML='Chưa chọn';btn.disabled=true;return;}
+  if(!cde){lbl.innerHTML='Bắt đầu: <b>'+calFmt(cds)+'</b>';btn.disabled=true;return;}
+  lbl.innerHTML='<b>'+calFmt(cds)+'</b> &rarr; <b>'+calFmt(cde)+'</b>';
+  btn.disabled=false;
+}
+function calFmt(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function calReset(){
+  cds=null;cde=null;cstep=0;
+  document.getElementById('calHint').textContent='Chọn ngày bắt đầu tuần';
+  document.getElementById('calTxt').textContent='Chọn khoảng ngày...';
+  document.getElementById('btnCreate').disabled=true;
+  document.getElementById('calOK').disabled=true;
+  document.getElementById('calLbl').innerHTML='Chưa chọn';
+  calRender();
+}
+function calConfirm(){
+  if(!cds||!cde) return;
+  var d1=cds.getDate(),d2=cde.getDate();
+  var m1=String(cds.getMonth()+1).padStart(2,'0');
+  var m2=String(cde.getMonth()+1).padStart(2,'0');
+  var y1=cds.getFullYear(),y2=cde.getFullYear();
+  var lbl;
+  if(m1===m2&&y1===y2) lbl=d1+'-'+d2+'/'+m1+'/'+y1;
+  else if(y1===y2) lbl=d1+'/'+m1+'-'+d2+'/'+m2+'/'+y1;
+  else lbl=d1+'/'+m1+'/'+y1+'-'+d2+'/'+m2+'/'+y2;
+  document.getElementById('calTxt').textContent=lbl;
+  document.getElementById('btnCreate').disabled=false;
+  cstep=0;
+  document.getElementById('calHint').textContent='Chọn ngày bắt đầu tuần';
+  document.getElementById('calPop').classList.remove('open');
+  document.getElementById('calTrig').classList.remove('open');
+}
+
+// ── INIT ──
+init();
+</script>
+</body>
+</html>
