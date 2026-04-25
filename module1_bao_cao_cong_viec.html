@@ -6,305 +6,444 @@
 <title>Báo cáo công việc - Thành</title>
 <script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f4f6fb;--white:#fff;--border:#dde1ea;--border2:#b8c0d4;
-  --accent:#1a56db;--accent-light:#e8f0fe;
-  --green:#0e9f6e;--green-light:#f0fdf4;
-  --amber:#b45309;--amber-light:#fef3c7;
-  --red:#dc2626;--red-light:#fee2e2;
-  --text:#111827;--text2:#374151;--text3:#9ca3af;
-  --hbg:#1e3a5f;
-  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
-  --mono:'Courier New',Courier,monospace;
+  --sidebar-bg:#2D1B69;
+  --sidebar-hover:#3D2A82;
+  --sidebar-active:#4F3A9F;
+  --sidebar-text:rgba(255,255,255,0.7);
+  --sidebar-text-active:#fff;
+  --sidebar-w:220px;
+  --primary:#5B47E0;
+  --primary-light:#EEF0FF;
+  --orange:#F97316;
+  --orange-light:#FFF4ED;
+  --amber:#F59E0B;
+  --amber-light:#FFFBEB;
+  --green:#10B981;
+  --green-light:#ECFDF5;
+  --red:#EF4444;
+  --red-light:#FEF2F2;
+  --bg:#F0F2FF;
+  --white:#FFFFFF;
+  --card-shadow:0 2px 12px rgba(91,71,224,0.08);
+  --card-shadow-hover:0 8px 28px rgba(91,71,224,0.15);
+  --border:#E8E8F0;
+  --text:#1E1B4B;
+  --text2:#64748B;
+  --text3:#A0AEC0;
+  --font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --radius:12px;
+  --radius-sm:8px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);font-family:var(--sans);font-size:14px;color:var(--text);min-height:100vh;padding-bottom:72px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;font-size:14px}
 
-/* TOPBAR */
-.topbar{background:var(--hbg);color:#fff;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.topbar-left{display:flex;align-items:center;gap:12px}
-.mod-tag{background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:4px;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.75);padding:3px 8px;letter-spacing:1.5px}
-.topbar-title{font-size:15px;font-weight:600}
-.sync-status{font-size:11px;font-family:var(--mono);padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.2)}
-.sync-status.ok{background:rgba(14,159,110,0.25);color:#6ee7b7}
-.sync-status.err{background:rgba(220,38,38,0.25);color:#fca5a5}
-.sync-status.loading{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6)}
-.topbar-btns{display:flex;gap:7px;flex-wrap:wrap}
-.tbtn{padding:5px 12px;border-radius:5px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.09);color:#fff;font-size:12px;cursor:pointer;font-family:var(--sans);transition:background .15s}
-.tbtn:hover{background:rgba(255,255,255,0.18)}
-.tbtn:disabled{opacity:.4;cursor:default;pointer-events:none}
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;transition:width .25s}
+.sidebar-brand{padding:20px 16px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.brand-icon{width:36px;height:36px;background:linear-gradient(135deg,#7C6FE0,#4F3A9F);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.brand-name{font-size:13px;font-weight:700;color:#fff;line-height:1.3}
+.brand-sub{font-size:10px;color:var(--sidebar-text);font-weight:400}
 
-/* SETUP BANNER */
-.setup-banner{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:14px 18px;margin:16px 24px;font-size:13px;line-height:1.7}
-.setup-banner strong{color:#92400e}
-.setup-banner code{background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:12px;color:#78350f}
-.setup-input-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
-.setup-input{border:1px solid #fcd34d;border-radius:5px;padding:6px 10px;font-size:12px;font-family:var(--mono);width:420px;background:#fff;color:var(--text)}
-.setup-input:focus{outline:2px solid var(--accent)}
+.sidebar-section{padding:14px 12px 4px;font-size:9px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase}
 
-/* WEEK BAR */
-.weekbar{background:var(--white);border-bottom:1px solid var(--border);padding:9px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.wlabel{font-size:11px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
-.wselect{border:1px solid var(--border2);border-radius:5px;padding:5px 9px;font-size:13px;color:var(--text2);background:var(--white);cursor:pointer}
-.sep{color:var(--border2);margin:0 2px}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:var(--sidebar-text);font-size:13px;font-weight:500;border-radius:0;transition:all .15s;position:relative;margin:1px 8px;border-radius:8px}
+.nav-item:hover{background:var(--sidebar-hover);color:var(--sidebar-text-active)}
+.nav-item.active{background:linear-gradient(90deg,rgba(255,255,255,0.18),rgba(255,255,255,0.08));color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:#7C6FE0;border-radius:0 2px 2px 0;margin-left:-8px}
+.nav-ico{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--primary);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center}
+
+/* Weeks list in sidebar */
+.week-list{margin:0 8px;max-height:220px;overflow-y:auto}
+.week-list::-webkit-scrollbar{width:3px}
+.week-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:2px}
+.week-item{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;color:var(--sidebar-text);font-size:12px;border-radius:8px;margin:1px 0;transition:all .15s}
+.week-item:hover{background:var(--sidebar-hover);color:#fff}
+.week-item.active{background:rgba(255,255,255,0.15);color:#fff;font-weight:600}
+.week-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.3);flex-shrink:0}
+.week-item.active .week-dot{background:#7C6FE0}
+
+.sidebar-footer{padding:12px;border-top:1px solid rgba(255,255,255,0.08)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.07);border-radius:10px;cursor:pointer}
+.user-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.3);flex-shrink:0;background:linear-gradient(135deg,#7C6FE0,#F97316);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:10px;color:var(--sidebar-text)}
+.user-action{font-size:11px;color:var(--sidebar-text)}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* TOP HEADER */
+.topheader{background:var(--white);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.th-left{display:flex;align-items:center;gap:16px}
+.th-title{font-size:18px;font-weight:700;color:var(--text)}
+.th-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.sync-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:monospace}
+.sync-pill.ok{background:var(--green-light);color:var(--green)}
+.sync-pill.err{background:var(--red-light);color:var(--red)}
+.sync-pill.loading{background:var(--primary-light);color:var(--primary)}
+.th-right{display:flex;align-items:center;gap:8px}
+.th-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.th-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.th-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.th-btn.primary:hover{background:#4738C0;color:#fff}
+.th-btn:disabled{opacity:.4;pointer-events:none}
+
+/* CONTENT */
+.content{padding:24px 28px;flex:1}
+
+/* NEW WEEK BAR */
+.new-week-bar{background:var(--white);border-radius:var(--radius);padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;gap:12px;box-shadow:var(--card-shadow);flex-wrap:wrap}
+.nwb-label{font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap}
+.nwb-sep{color:var(--border);margin:0 2px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--card-shadow);display:flex;align-items:center;gap:16px;transition:box-shadow .2s}
+.stat-card:hover{box-shadow:var(--card-shadow-hover)}
+.stat-icon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.si-blue{background:var(--primary-light)}
+.si-green{background:var(--green-light)}
+.si-orange{background:var(--orange-light)}
+.si-amber{background:var(--amber-light)}
+.stat-body{flex:1}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.stat-val{font-size:28px;font-weight:800;color:var(--text);line-height:1}
+
+/* TABLE CARD */
+.table-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--card-shadow);overflow:hidden}
+.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.table-title{font-size:15px;font-weight:700;color:var(--text)}
+.table-week{font-size:12px;color:var(--text2);font-weight:500}
+.table-actions{display:flex;gap:8px;align-items:center}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:900px}
+thead tr{background:linear-gradient(90deg,var(--sidebar-bg),#3D2A82)}
+th{color:rgba(255,255,255,0.9);font-size:11px;font-weight:600;padding:12px 10px;text-align:center;border-right:1px solid rgba(255,255,255,0.08);white-space:nowrap;letter-spacing:.5px}
+th:last-child{border-right:none}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--primary-light)}
+td{padding:8px 10px;vertical-align:middle;font-size:13px;color:var(--text);border-right:1px solid var(--border)}
+td:last-child{border-right:none}
+.td-num{text-align:center;color:var(--text3);font-size:11px;font-weight:700;width:36px}
+.cin{width:100%;border:none;background:transparent;font-family:var(--font);font-size:13px;color:var(--text);padding:3px 4px;border-radius:6px;resize:none;line-height:1.5;min-height:28px}
+.cin:focus{outline:2px solid var(--primary);background:var(--white)}
+select.cin{cursor:pointer}
+.empty-td{text-align:center;padding:48px;color:var(--text3)}
+.empty-ico{font-size:36px;display:block;margin-bottom:10px;opacity:.3}
+
+/* PRI BADGE */
+.pri-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.pri-p1{background:#FEE2E2;color:#DC2626}
+.pri-p2{background:#FEF9C3;color:#A16207}
+.pri-p3{background:#F1F5F9;color:#64748B}
+
+/* STATUS BADGE in select */
+select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600;border:none;cursor:pointer;-webkit-appearance:none}
+
+/* SAVE BAR */
+.savebar{position:fixed;bottom:0;left:var(--sidebar-w);right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;z-index:50;box-shadow:0 -4px 20px rgba(0,0,0,0.06)}
+.save-status{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.save-btns{display:flex;gap:8px}
+.dot-pulse{width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:var(--font)}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-primary:hover{background:#4738C0;color:#fff}
+.btn-success{background:var(--green);border-color:var(--green);color:#fff}
+.btn-success:hover{background:#0DA070;color:#fff}
+.btn-danger{border-color:#FECACA;color:var(--red)}
+.btn-danger:hover{background:var(--red-light)}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:6px}
+.btn-xs{padding:3px 8px;font-size:10px;border-radius:5px}
 
 /* CALENDAR */
 .cal-wrap{position:relative;display:inline-block}
-.cal-trigger{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border2);border-radius:5px;padding:5px 11px;background:var(--white);font-family:var(--mono);font-size:12px;color:var(--text2);cursor:pointer;min-width:170px;transition:border-color .13s}
-.cal-trigger:hover,.cal-trigger.open{border-color:var(--accent);color:var(--accent)}
-.cal-popup{position:absolute;top:calc(100% + 6px);left:0;background:var(--white);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.13);padding:16px;width:280px;z-index:999;display:none}
+.cal-trigger{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;background:var(--white);font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;min-width:175px;transition:all .15s}
+.cal-trigger:hover,.cal-trigger.open{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.cal-popup{position:absolute;top:calc(100% + 8px);left:0;background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:0 12px 40px rgba(91,71,224,0.15);padding:18px;width:290px;z-index:999;display:none}
 .cal-popup.open{display:block}
-.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.cal-navbtn{width:28px;height:28px;border-radius:5px;border:1px solid var(--border);background:var(--white);cursor:pointer;font-size:15px;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:all .1s}
-.cal-navbtn:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
-.cal-mlabel{font-weight:600;font-size:13px;color:var(--text)}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-navbtn{width:30px;height:30px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:all .12s}
+.cal-navbtn:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
+.cal-mlabel{font-size:13px;font-weight:700;color:var(--text)}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.cal-dow{text-align:center;font-size:9px;font-weight:700;color:var(--text3);padding:4px 0;font-family:var(--mono)}
-.cal-day{text-align:center;padding:6px 2px;font-size:12px;font-family:var(--mono);border-radius:5px;cursor:pointer;color:var(--text2);transition:all .1s;user-select:none}
-.cal-day:not(.empty):hover{background:var(--accent-light);color:var(--accent)}
+.cal-dow{text-align:center;font-size:9px;font-weight:700;color:var(--text3);padding:5px 0;letter-spacing:.5px}
+.cal-day{text-align:center;padding:7px 2px;font-size:12px;font-weight:500;border-radius:6px;cursor:pointer;color:var(--text2);transition:all .1s;user-select:none}
+.cal-day:not(.empty):hover{background:var(--primary-light);color:var(--primary)}
 .cal-day.empty{cursor:default;color:transparent}
-.cal-day.today{font-weight:700;color:var(--accent)}
-.cal-day.in-range{background:var(--accent-light);border-radius:0}
-.cal-day.sel-start{background:var(--accent);color:#fff;font-weight:600;border-radius:5px 0 0 5px}
-.cal-day.sel-end{background:var(--accent);color:#fff;font-weight:600;border-radius:0 5px 5px 0}
-.cal-day.sel-start.sel-end{border-radius:5px}
-.cal-hint{font-size:10px;color:var(--text3);font-family:var(--mono);text-align:center;margin-bottom:9px}
-.cal-foot{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.cal-sel-lbl{flex:1;font-size:10px;color:var(--text3);font-family:var(--mono)}
-.cal-sel-lbl b{color:var(--accent);font-weight:500}
+.cal-day.today{font-weight:800;color:var(--primary)}
+.cal-day.in-range{background:var(--primary-light);border-radius:0;color:var(--primary)}
+.cal-day.sel-start{background:var(--primary);color:#fff;font-weight:700;border-radius:8px 0 0 8px}
+.cal-day.sel-end{background:var(--primary);color:#fff;font-weight:700;border-radius:0 8px 8px 0}
+.cal-day.sel-start.sel-end{border-radius:8px}
+.cal-hint{font-size:10px;color:var(--text3);text-align:center;margin-bottom:10px;font-weight:500}
+.cal-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.cal-sel-lbl{flex:1;font-size:10px;color:var(--text3)}
+.cal-sel-lbl b{color:var(--primary);font-weight:600}
 
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:6px;border:1px solid var(--border2);background:var(--white);color:var(--text2);font-size:13px;cursor:pointer;transition:all .13s;white-space:nowrap}
-.btn:hover{background:var(--bg);border-color:var(--accent);color:var(--accent)}
-.btn:disabled{opacity:.45;cursor:default;pointer-events:none}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-primary:hover{background:#1648c0;color:#fff}
-.btn-green{background:var(--green);border-color:var(--green);color:#fff}
-.btn-green:hover{background:#0a7d57;color:#fff}
-.btn-danger{border-color:#fca5a5;color:var(--red);background:var(--white)}
-.btn-danger:hover{background:var(--red-light)}
-.btn-sm{padding:4px 10px;font-size:12px}
-.btn-xs{padding:2px 7px;font-size:11px;border-radius:4px}
-
-/* WRAPPER & STATS */
-.wrapper{padding:20px 24px}
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:11px;margin-bottom:18px}
-.stat-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:13px 15px}
-.stat-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
-.stat-val{font-size:24px;font-weight:700;font-family:var(--mono)}
-.cv-blue{color:var(--accent)} .cv-green{color:var(--green)} .cv-amber{color:var(--amber)} .cv-red{color:var(--red)}
-
-/* TABLE */
-.tbl-card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.tbl-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
-.tbl-bar-lbl{font-size:13px;font-weight:500;color:var(--text2)}
-.tbl-bar-btns{display:flex;gap:7px}
-.tbl-scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:860px}
-thead tr{background:var(--hbg)}
-th{color:#fff;font-size:11px;font-weight:500;padding:10px 9px;text-align:center;border-right:1px solid rgba(255,255,255,0.1);white-space:nowrap}
-th:last-child{border-right:none}
-tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:#f0f5ff}
-td{padding:6px 8px;vertical-align:middle;font-size:13px;color:var(--text);border-right:1px solid var(--border)}
-td:last-child{border-right:none}
-.td-stt{text-align:center;color:var(--text3);font-family:var(--mono);font-size:11px;width:40px}
-.cin{width:100%;border:none;background:transparent;font-family:var(--sans);font-size:13px;color:var(--text);padding:3px 4px;border-radius:4px;resize:none;line-height:1.5;min-height:28px}
-.cin:focus{outline:2px solid var(--accent);background:var(--white)}
-.cin.ctr{text-align:center}
-select.cin{cursor:pointer}
-.empty-td{text-align:center;padding:40px;color:var(--text3);font-size:13px;border:none}
-.empty-ico{font-size:26px;display:block;margin-bottom:8px;opacity:.35}
-
-/* SHEET LINK BADGE */
-.sheet-link{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--accent);font-family:var(--mono);text-decoration:none;padding:2px 7px;border-radius:4px;border:1px solid var(--accent-light);background:var(--accent-light);transition:all .13s}
-.sheet-link:hover{background:var(--accent);color:#fff}
-
-
-/* DATE PICKER */
-.date-input{width:100%;border:none;background:transparent;font-family:var(--sans);font-size:12px;color:var(--text);padding:3px 4px;border-radius:4px;text-align:center;cursor:pointer}
-.date-input:focus{outline:2px solid var(--accent);background:var(--white)}
-/* STATUS BADGE */
-.sta-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
-.sta-cct{background:#f1f5f9;color:#64748b}
-.sta-dl{background:#dbeafe;color:#1d4ed8}
-.sta-done{background:#dcfce7;color:#16a34a}
-.sta-ddg{background:#fef9c3;color:#a16207}
-.sta-test{background:#fce7f3;color:#be185d}
-
-/* AUTH BAR */
-.auth-bar{background:#fff;border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)}
-.auth-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid var(--accent-light)}
-.auth-name{font-weight:500;color:var(--text)}
-.auth-email{color:var(--text3);font-family:var(--mono);font-size:11px}
-.auth-role{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;font-family:var(--mono)}
-.auth-role.editor{background:#dcfce7;color:#16a34a}
-.auth-role.viewer{background:#f1f5f9;color:#64748b}
-.auth-btn{padding:5px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--white);color:var(--text2);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px}
-.auth-btn:hover{background:var(--bg)}
-.readonly-banner{background:#fef9c3;border:1px solid #fcd34d;border-radius:6px;padding:7px 14px;font-size:12px;color:#92400e;display:none;align-items:center;gap:8px;margin:10px 24px 0}
-.readonly-banner.show{display:flex}
-/* LOCK OVERLAY cho inputs khi readonly */
-.tbl-readonly td input,.tbl-readonly td textarea,.tbl-readonly td select{pointer-events:none;opacity:0.7;background:transparent}
-.tbl-readonly .btn-xs{display:none}
-.tbl-readonly-btns .btn-primary,.tbl-readonly-btns .btn-green{opacity:0.4;pointer-events:none}
-
-/* LOADING OVERLAY */
-.loading-overlay{position:absolute;inset:0;background:rgba(255,255,255,0.82);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:10px}
-.spinner{width:28px;height:28px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+/* LOADING */
+.tbl-card-wrap{position:relative}
+.loading-overlay{position:absolute;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:var(--radius)}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.tbl-card{position:relative}
-
-/* SAVE BAR */
-.savebar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;z-index:50;box-shadow:0 -2px 10px rgba(0,0,0,0.06)}
-.save-lbl{font-size:12px;color:var(--text3);font-family:var(--mono)}
-.save-btns{display:flex;gap:8px}
-.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:6px;vertical-align:middle;animation:pulse 1.2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* TOAST */
-.toast{position:fixed;top:18px;right:22px;background:#1f2937;color:#fff;padding:10px 18px;border-radius:7px;font-size:13px;font-family:var(--mono);opacity:0;transform:translateY(-8px);transition:all .2s;z-index:1000;pointer-events:none;max-width:340px}
-.toast.show{opacity:1;transform:translateY(0)}
-.toast.ok{background:var(--green)} .toast.err{background:var(--red)} .toast.info{background:#1e3a5f}
+.toast{position:fixed;top:20px;right:24px;padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;opacity:0;transform:translateY(-10px) scale(.97);transition:all .22s;z-index:1000;pointer-events:none;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.toast.show{opacity:1;transform:translateY(0) scale(1)}
+.toast.ok{background:var(--green);color:#fff}
+.toast.err{background:var(--red);color:#fff}
+.toast.info{background:var(--primary);color:#fff}
 
-/* MODAL XAC NHAN XOA */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:center;justify-content:center}
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(30,27,75,0.5);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
 .modal-backdrop.open{display:flex}
-.modal{background:var(--white);border-radius:12px;padding:28px 28px 22px;max-width:380px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,0.18)}
-.modal-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px}
-.modal-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.modal{background:var(--white);border-radius:var(--radius);padding:28px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(30,27,75,0.2)}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:10px}
+.modal-desc{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:22px}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end}
+
+/* READONLY */
+.tbl-readonly td input,.tbl-readonly td textarea,.tbl-readonly td select{pointer-events:none;opacity:.75}
+.tbl-readonly .btn-xs{display:none}
+.tbl-readonly-btns .btn-primary,.tbl-readonly-btns .btn-success{opacity:.4;pointer-events:none}
+
+/* SHEET LINK */
+.sheet-link{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--primary);padding:5px 10px;border-radius:6px;border:1.5px solid var(--primary-light);background:var(--primary-light);text-decoration:none;font-weight:600;transition:all .15s}
+.sheet-link:hover{background:var(--primary);color:#fff}
+
+/* READONLY NOTICE */
+.readonly-notice{background:var(--amber-light);border:1.5px solid #FCD34D;border-radius:var(--radius-sm);padding:8px 16px;font-size:12px;color:#92400E;display:none;align-items:center;gap:8px;margin:12px 28px 0;font-weight:500}
+.readonly-notice.show{display:flex}
+
+/* AUTH BAR */
+.auth-bar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;gap:10px;font-size:12px}
+.auth-role-badge{padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700}
+.role-editor{background:var(--green-light);color:var(--green)}
+.role-viewer{background:#F1F5F9;color:#64748B}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:3px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{width:60px}
+  .brand-name,.brand-sub,.nav-item span,.week-list,.sidebar-section,.user-info{display:none}
+  .main{margin-left:60px}
+  .savebar{left:60px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="topbar-left">
-    <div class="topbar-title">Báo cáo công việc</div>
-    <div class="sync-status loading" id="syncStatus">● Chưa kết nối</div>
-  </div>
-  <div class="topbar-btns">
-    <button class="tbtn" id="btnReload" onclick="reloadFromSheet()" disabled>↻ Tải lại từ Sheets</button>
-    <button class="tbtn" onclick="exportCSV()">Xuất CSV</button>
-  </div>
-</div>
-
-<!-- AUTH BAR -->
-<div class="auth-bar" id="authBar">
-  <div id="authGuest" style="display:flex;align-items:center;gap:8px;width:100%">
-    <span style="color:var(--text3)">👁 Chế độ xem — đăng nhập để chỉnh sửa</span>
-    <div id="googleSignInBtn" style="margin-left:auto"></div>
-  </div>
-  <div id="authUser" style="display:none;align-items:center;gap:8px;width:100%">
-    <img class="auth-avatar" id="authAvatar" src="" alt="">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">📋</div>
     <div>
-      <div class="auth-name" id="authName"></div>
-      <div class="auth-email" id="authEmail"></div>
+      <div class="brand-name">Báo cáo công việc</div>
+      <div class="brand-sub">Thành - TPBank EDC</div>
     </div>
-    <span class="auth-role" id="authRole">Viewer</span>
-    <button class="auth-btn" style="margin-left:auto" onclick="signOut()">Đăng xuất</button>
   </div>
-</div>
-<div class="readonly-banner" id="readonlyBanner">
-  🔒 Tài khoản này không có quyền chỉnh sửa. Liên hệ quản trị viên để được cấp quyền.
-</div>
 
-<!-- SETUP BANNER (removed - config in config.js) -->
-
-<!-- WEEK BAR -->
-<div class="weekbar">
-  <span class="wlabel">Tuần:</span>
-  <select class="wselect" id="weekSel" onchange="switchWeek(this.value)">
-    <option value="">-- Chọn tuần --</option>
-  </select>
-  <span class="sep">|</span>
-  <span class="wlabel">Tạo tuần mới:</span>
-  <div class="cal-wrap" id="calWrap">
-    <div class="cal-trigger" id="calTrig" onclick="event.stopPropagation();calToggle()">
-      <span style="font-size:14px">📅</span>
-      <span id="calTxt" style="flex:1">Chọn khoảng ngày...</span>
-      <span style="font-size:10px;color:var(--text3)">▼</span>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Tuần hiện tại</div>
+    <div class="nav-item active">
+      <span class="nav-ico">📅</span>
+      <span id="sideWeekLabel">Chọn tuần...</span>
     </div>
-    <div class="cal-popup" id="calPop" onclick="event.stopPropagation()">
-      <div class="cal-nav">
-        <button class="cal-navbtn" onclick="calMove(-1)">‹</button>
-        <div class="cal-mlabel" id="calML"></div>
-        <button class="cal-navbtn" onclick="calMove(1)">›</button>
-      </div>
-      <div class="cal-hint" id="calHint">Chọn ngày bắt đầu tuần</div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div class="cal-foot">
-        <div class="cal-sel-lbl" id="calLbl">Chưa chọn</div>
-        <button class="btn btn-xs" onclick="calReset()">Đặt lại</button>
-        <button class="btn btn-xs btn-primary" id="calOK" onclick="calConfirm()" disabled>Xác nhận</button>
+
+    <div class="sidebar-section">Danh sách tuần</div>
+    <div class="week-list" id="weekList">
+      <div style="padding:8px 12px;font-size:11px;color:rgba(255,255,255,0.3)">Đang tải...</div>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <!-- Auth user info -->
+    <div id="sideGuest" style="text-align:center">
+      <div id="googleSignInBtn2"></div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:6px">Đăng nhập để chỉnh sửa</div>
+    </div>
+    <div id="sideUser" style="display:none">
+      <div class="user-card" onclick="signOut()">
+        <div class="user-avatar" id="sideAvatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="sideName">Người dùng</div>
+          <div class="user-role" id="sideRole">Viewer</div>
+        </div>
+        <div class="user-action">↩</div>
       </div>
     </div>
   </div>
-  <button class="btn btn-sm btn-primary" id="btnCreate" onclick="createWeek()" disabled>+ Tạo tuần</button>
-  <button class="btn btn-sm btn-danger" id="btnDelete" onclick="confirmDeleteWeek()" style="margin-left:auto" disabled>Xóa dữ liệu tuần</button>
-</div>
+</aside>
 
 <!-- MAIN -->
-<div class="wrapper">
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-lbl">Tổng task</div><div class="stat-val cv-blue" id="sTotal">0</div></div>
-    <div class="stat-card"><div class="stat-lbl">Hoàn thành</div><div class="stat-val cv-green" id="sDone">0</div></div>
-    <div class="stat-card"><div class="stat-lbl">Đang làm</div><div class="stat-val cv-blue" id="sDoing">0</div></div>
-    <div class="stat-card"><div class="stat-lbl">Chưa có timeline</div><div class="stat-val cv-amber" id="sNoTL">0</div></div>
+<div class="main">
+
+  <!-- TOP HEADER -->
+  <header class="topheader">
+    <div class="th-left">
+      <div>
+        <div class="th-title" id="thTitle">Báo cáo công việc</div>
+        <div class="th-sub" id="thSub">Chọn hoặc tạo tuần để bắt đầu</div>
+      </div>
+      <div class="sync-pill loading" id="syncStatus">● Đang kết nối</div>
+    </div>
+    <div class="th-right">
+      <a id="sheetLink" class="sheet-link" href="#" target="_blank" style="display:none">📊 Mở Sheets</a>
+      <button class="th-btn" id="btnReload" onclick="reloadFromSheet()" disabled>↻ Tải lại</button>
+      <button class="th-btn" onclick="exportCSV()">⬇ Xuất CSV</button>
+    </div>
+  </header>
+
+  <!-- AUTH BAR -->
+  <div class="auth-bar" id="authBar">
+    <div id="authGuest" style="display:flex;align-items:center;gap:8px;width:100%">
+      <span style="color:var(--text3)">👁 Chế độ xem — đăng nhập để chỉnh sửa</span>
+      <div id="googleSignInBtn" style="margin-left:auto"></div>
+    </div>
+    <div id="authUser" style="display:none;align-items:center;gap:8px;width:100%">
+      <img id="authAvatar" src="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid var(--primary-light)" alt="">
+      <span id="authName" style="font-weight:600;color:var(--text)"></span>
+      <span id="authEmail" style="color:var(--text3);font-size:11px"></span>
+      <span class="auth-role-badge role-viewer" id="authRole">Viewer</span>
+      <button class="btn btn-sm btn-danger" style="margin-left:auto" onclick="signOut()">Đăng xuất</button>
+    </div>
   </div>
 
-  <div class="tbl-card" id="tblCard">
-    <div id="tblLoading" class="loading-overlay" style="display:none"><div class="spinner"></div></div>
-    <div class="tbl-bar">
-      <div class="tbl-bar-lbl" id="tblLbl">Chọn hoặc tạo tuần để bắt đầu</div>
-      <div class="tbl-bar-btns">
-        <a id="sheetLink" class="sheet-link" href="#" target="_blank" style="display:none">
-          📊 Mở Sheet tab
-        </a>
-        <button class="btn btn-sm" id="btnAdd" onclick="addRow()" disabled>+ Thêm dòng</button>
-        <button class="btn btn-sm btn-primary" id="btnSave" onclick="saveData()" disabled>☁ Lưu lên Sheets</button>
+  <div class="readonly-notice" id="readonlyBanner">
+    🔒 Tài khoản này không có quyền chỉnh sửa. Liên hệ quản trị viên.
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- NEW WEEK BAR -->
+    <div class="new-week-bar">
+      <span class="nwb-label">➕ Tạo tuần mới:</span>
+      <div class="cal-wrap" id="calWrap">
+        <div class="cal-trigger" id="calTrig" onclick="event.stopPropagation();calToggle()">
+          <span>📅</span>
+          <span id="calTxt" style="flex:1">Chọn khoảng ngày...</span>
+          <span style="font-size:10px;color:var(--text3)">▼</span>
+        </div>
+        <div class="cal-popup" id="calPop" onclick="event.stopPropagation()">
+          <div class="cal-nav">
+            <button class="cal-navbtn" onclick="calMove(-1)">‹</button>
+            <div class="cal-mlabel" id="calML"></div>
+            <button class="cal-navbtn" onclick="calMove(1)">›</button>
+          </div>
+          <div class="cal-hint" id="calHint">Chọn ngày bắt đầu tuần</div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-foot">
+            <div class="cal-sel-lbl" id="calLbl">Chưa chọn</div>
+            <button class="btn btn-xs" onclick="calReset()">Đặt lại</button>
+            <button class="btn btn-xs btn-primary" id="calOK" onclick="calConfirm()" disabled>Xác nhận</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btnCreate" onclick="createWeek()" disabled>+ Tạo tuần</button>
+      <button class="btn btn-danger btn-sm" id="btnDelete" onclick="confirmDeleteWeek()" style="margin-left:auto" disabled>🗑 Xóa dữ liệu tuần</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon si-blue">📋</div>
+        <div class="stat-body">
+          <div class="stat-lbl">Tổng task</div>
+          <div class="stat-val" id="sTotal">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-green">✅</div>
+        <div class="stat-body">
+          <div class="stat-lbl">Hoàn thành</div>
+          <div class="stat-val" id="sDone" style="color:var(--green)">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-orange">⚡</div>
+        <div class="stat-body">
+          <div class="stat-lbl">Đang làm</div>
+          <div class="stat-val" id="sDoing" style="color:var(--orange)">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-amber">🕐</div>
+        <div class="stat-body">
+          <div class="stat-lbl">Chưa có timeline</div>
+          <div class="stat-val" id="sNoTL" style="color:var(--amber)">0</div>
+        </div>
       </div>
     </div>
-    <div class="tbl-scroll">
-      <table>
-        <thead><tr>
-          <th style="width:40px">#</th>
-          <th style="width:120px">Phân hệ</th>
-          <th style="width:195px">Tính năng / Màn hình</th>
-          <th style="width:180px">Mô tả</th>
-          <th style="width:85px">Độ ưu tiên</th>
-          <th style="width:105px">TG thực hiện (ngày)</th>
-          <th style="width:130px">Thời gian hoàn thành</th>
-          <th style="width:130px">Trạng thái</th>
-          <th style="width:180px">Ghi chú</th>
-          <th style="width:46px"></th>
-        </tr></thead>
-        <tbody id="tBody"></tbody>
-      </table>
+
+    <!-- TABLE -->
+    <div class="table-card tbl-card-wrap" id="tblCard">
+      <div id="tblLoading" class="loading-overlay" style="display:none"><div class="spinner"></div></div>
+      <div class="table-header">
+        <div>
+          <div class="table-title" id="tblTitle">Danh sách task</div>
+          <div class="table-week" id="tblLbl">Chọn hoặc tạo tuần để bắt đầu</div>
+        </div>
+        <div class="table-actions" id="tblActionsBar">
+          <button class="btn btn-sm" id="btnAdd" onclick="addRow()" disabled>+ Thêm dòng</button>
+          <button class="btn btn-primary btn-sm" id="btnSave" onclick="saveData()" disabled>☁ Lưu lên Sheets</button>
+        </div>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th style="width:36px">#</th>
+            <th style="width:115px">Phân hệ</th>
+            <th style="width:180px">Tính năng / Màn hình</th>
+            <th style="width:190px">Mô tả</th>
+            <th style="width:80px">Độ ưu tiên</th>
+            <th style="width:100px">TG thực hiện (ngày)</th>
+            <th style="width:120px">Thời gian hoàn thành</th>
+            <th style="width:120px">Trạng thái</th>
+            <th style="width:180px">Ghi chú</th>
+            <th style="width:40px"></th>
+          </tr></thead>
+          <tbody id="tBody"></tbody>
+        </table>
+      </div>
     </div>
-  </div>
-</div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
 
 <!-- SAVE BAR -->
 <div class="savebar">
-  <div class="save-lbl" id="saveLbl">Chưa chọn tuần</div>
-  <div class="save-btns">
-    <button class="btn" id="btnClear" onclick="clearAll()" disabled>Xóa dữ liệu tuần này</button>
-    <button class="btn btn-green" id="btnSave2" onclick="saveData()" disabled>☁ Lưu lên Google Sheets</button>
+  <div class="save-status" id="saveLbl">Chưa chọn tuần</div>
+  <div class="save-btns" id="saveBtnsEl">
+    <button class="btn btn-sm btn-danger" id="btnClear" onclick="clearAll()" disabled>Xóa dữ liệu tuần</button>
+    <button class="btn btn-success btn-sm" id="btnSave2" onclick="saveData()" disabled>☁ Lưu lên Google Sheets</button>
   </div>
 </div>
 
-<!-- MODAL XAC NHAN XOA TUAN -->
+<!-- MODAL -->
 <div class="modal-backdrop" id="deleteModal">
   <div class="modal">
     <div class="modal-title">⚠ Xóa dữ liệu tuần này?</div>
-    <div class="modal-desc" id="deleteModalDesc">Hành động này sẽ xóa hẳn sheet tab trên Google Sheets và không thể hoàn tác.</div>
+    <div class="modal-desc" id="deleteModalDesc"></div>
     <div class="modal-btns">
       <button class="btn btn-sm" onclick="closeDeleteModal()">Hủy</button>
-      <button class="btn btn-sm btn-danger" onclick="doDeleteWeek()">Xóa hẳn</button>
+      <button class="btn btn-sm btn-danger" onclick="doDeleteWeek()">Xóa</button>
     </div>
   </div>
 </div>
@@ -312,6 +451,41 @@ select.cin{cursor:pointer}
 <div class="toast" id="toast"></div>
 
 <script>
+
+// ── SIDEBAR WEEK LIST ──
+function buildSideWeekList() {
+  var container = document.getElementById('weekList');
+  if (!container) return;
+
+  // Sort theo ngay thuc te
+  function parseWeekStart(name) {
+    var m;
+    m = name.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s*-/);
+    if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+    m = name.match(/^(\d{1,2})\/(\d{1,2})\s*-\s*\d{1,2}\/\d{1,2}\/(\d{4})/);
+    if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+    m = name.match(/^(\d{1,2})\s*-\s*\d{1,2}\/(\d{1,2})\/(\d{4})/);
+    if (m) return new Date(+m[3], +m[2]-1, +m[1]);
+    return new Date(0);
+  }
+  var sorted = weeksList.slice().sort(function(a,b){ return parseWeekStart(b)-parseWeekStart(a); });
+
+  if (!sorted.length) {
+    container.innerHTML = '<div style="padding:8px 12px;font-size:11px;color:rgba(255,255,255,0.3)">Chưa có tuần nào</div>';
+    return;
+  }
+
+  container.innerHTML = sorted.map(function(w) {
+    return '<div class="week-item'+(w===curWeek?' active':'')+'" onclick="switchWeek(''+w.replace(/'/g,"\'")+'')">'
+      +'<div class="week-dot"></div>'
+      +'<span>'+w+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+// Override buildWeekSel de cung build sidebar
+var _origBuildWeekSel = typeof buildWeekSel !== 'undefined' ? buildWeekSel : null;
+
 // ══════════════════════════════════════════════
 //  CONFIG & STATE
 // ══════════════════════════════════════════════
@@ -481,6 +655,7 @@ function buildWeekSel() {
     s.appendChild(o);
   }
   if (cur && weeksList.indexOf(cur) >= 0) s.value = cur;
+  buildSideWeekList();
 }
 
 function switchWeek(name) {
@@ -497,9 +672,14 @@ function switchWeek(name) {
     document.getElementById('weekSel').value = curWeek || ''; return;
   }
   curWeek = name;
+  buildSideWeekList();
+  // Update sidebar label
+  var sideLabel = document.getElementById('sideWeekLabel');
+  if (sideLabel) sideLabel.textContent = name || 'Chọn tuần...';
   rows = [];
   dirty = false;
   setLbl('📅 Tuần: ' + name);
+  var thSub = document.getElementById('thSub'); if(thSub) thSub.textContent = '📅 Tuần: '+name;
   setSave('Đang tải dữ liệu...');
   document.getElementById('btnDelete').disabled = false;
   updateSheetLink(name);
@@ -739,7 +919,7 @@ function updateStats() {
 //  UI HELPERS
 // ══════════════════════════════════════════════
 function setEnabled(on){ ['btnAdd','btnSave','btnSave2','btnClear'].forEach(function(id){ document.getElementById(id).disabled=!on; }); }
-function setLbl(h){ document.getElementById('tblLbl').innerHTML=h; }
+function setLbl(h){ var el=document.getElementById('tblLbl'); if(el) el.innerHTML=h; var tt=document.getElementById('tblTitle'); if(tt&&curWeek) tt.textContent='Danh sách task — Tuần '+curWeek; }
 function setSave(h){ document.getElementById('saveLbl').innerHTML=h; }
 function now(){ return new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}); }
 function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -853,6 +1033,13 @@ function initGoogleAuth() {
     document.getElementById('googleSignInBtn'),
     { theme: 'outline', size: 'small', text: 'signin_with', locale: 'vi' }
   );
+  // Render button in sidebar too
+  if (document.getElementById('googleSignInBtn2')) {
+    google.accounts.id.renderButton(
+      document.getElementById('googleSignInBtn2'),
+      { theme: 'filled_blue', size: 'small', text: 'signin', locale: 'vi', shape: 'pill' }
+    );
+  }
 }
 
 function handleGoogleSignIn(response) {
@@ -879,13 +1066,26 @@ function handleGoogleSignIn(response) {
     document.getElementById('authEmail').textContent = authUser.email;
     if (authUser.picture) document.getElementById('authAvatar').src = authUser.picture;
 
+    // Sidebar user
+    document.getElementById('sideGuest').style.display = 'none';
+    document.getElementById('sideUser').style.display = 'block';
+    document.getElementById('sideName').textContent = authUser.name;
+    var sideAvEl = document.getElementById('sideAvatar');
+    if (authUser.picture) {
+      sideAvEl.innerHTML = '<img src="'+authUser.picture+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover">';
+    } else {
+      sideAvEl.textContent = authUser.name.charAt(0).toUpperCase();
+    }
+
     var roleEl = document.getElementById('authRole');
     if (isEditor) {
-      roleEl.textContent = 'Editor'; roleEl.className = 'auth-role editor';
+      roleEl.textContent = 'Editor'; roleEl.className = 'auth-role-badge role-editor';
+      document.getElementById('sideRole').textContent = 'Editor';
       document.getElementById('readonlyBanner').classList.remove('show');
       showToast('Xin chào ' + authUser.name + '! Bạn có quyền chỉnh sửa.', 'ok');
     } else {
-      roleEl.textContent = 'Viewer'; roleEl.className = 'auth-role viewer';
+      roleEl.textContent = 'Viewer'; roleEl.className = 'auth-role-badge role-viewer';
+      document.getElementById('sideRole').textContent = 'Viewer';
       document.getElementById('readonlyBanner').classList.add('show');
       showToast('Tài khoản này chỉ có quyền xem.', 'info');
     }
@@ -899,6 +1099,8 @@ function signOut() {
   authToken = null; authUser = null; isEditor = false;
   document.getElementById('authGuest').style.display = 'flex';
   document.getElementById('authUser').style.display = 'none';
+  document.getElementById('sideGuest').style.display = 'block';
+  document.getElementById('sideUser').style.display = 'none';
   document.getElementById('readonlyBanner').classList.remove('show');
   setEditorMode(false);
   showToast('Đã đăng xuất', 'info');
@@ -907,8 +1109,8 @@ function signOut() {
 function setEditorMode(on) {
   isEditor = on;
   var tbl = document.getElementById('tblCard');
-  var saveBar = document.querySelector('.save-btns');
-  var tblBar = document.querySelector('.tbl-bar-btns');
+  var saveBar = document.getElementById('saveBtnsEl');
+  var tblBar = document.getElementById('tblActionsBar');
   if (on) {
     tbl.classList.remove('tbl-readonly');
     if (saveBar) saveBar.classList.remove('tbl-readonly-btns');
