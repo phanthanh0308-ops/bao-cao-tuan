@@ -237,6 +237,35 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
 ::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:3px}
 ::-webkit-scrollbar-track{background:transparent}
 
+/* REPORT SECTIONS */
+.rpt-section{display:none}.rpt-section.active{display:block}
+.rpt-section-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:18px;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:2px solid var(--border)}
+/* ERROR GROUPS */
+.error-group{margin-bottom:16px;background:var(--white);border-radius:var(--radius);box-shadow:var(--card-shadow);overflow:hidden}
+.error-group-title{padding:11px 18px;font-size:13px;font-weight:700;background:linear-gradient(90deg,var(--primary-light),var(--white));border-bottom:1px solid var(--border);color:var(--primary)}
+/* SECTION BLOCKS (mục 4) */
+.section-block{background:var(--white);border-radius:var(--radius);box-shadow:var(--card-shadow);overflow:hidden;margin-bottom:16px}
+.section-block-title{padding:13px 20px;font-size:13px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;color:var(--text)}
+.section-sub-title{padding:10px 20px;font-size:12px;font-weight:600;color:var(--text2);background:var(--bg)}
+.section-block .tbl-scroll{padding:0}
+/* PLACEHOLDER */
+.rpt-placeholder{background:var(--white);border-radius:var(--radius);box-shadow:var(--card-shadow);padding:56px 48px;text-align:center}
+.rpt-placeholder-ico{font-size:48px;display:block;margin-bottom:14px;opacity:.35}
+.rpt-placeholder-title{font-size:15px;font-weight:700;margin-bottom:6px}
+.rpt-placeholder-sub{font-size:13px;color:var(--text2);line-height:1.7}
+/* NAV SEPARATOR */
+.nav-sep{height:1px;background:rgba(255,255,255,.08);margin:8px 16px}
+/* REPORT SPECIFIC TABLE */
+.rpt-tbl{width:100%;border-collapse:collapse}
+.rpt-tbl thead tr{background:linear-gradient(90deg,#2D1B69,#3D2A82)}
+.rpt-tbl th{color:rgba(255,255,255,.9);font-size:11px;font-weight:600;padding:11px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.08);white-space:nowrap;letter-spacing:.5px}
+.rpt-tbl th:last-child{border-right:none}
+.rpt-tbl tbody tr{border-bottom:1px solid var(--border)}
+.rpt-tbl tbody tr:hover{background:var(--primary-light)}
+.rpt-tbl td{padding:9px 10px;vertical-align:middle;font-size:13px;border-right:1px solid var(--border)}
+.rpt-tbl td:last-child{border-right:none}
+/* TREND */
+.trend-up{color:var(--red);font-weight:700}.trend-down{color:var(--green);font-weight:700}.trend-eq{color:var(--text2)}
 /* RESPONSIVE */
 @media(max-width:768px){
   .sidebar{width:60px}
@@ -246,6 +275,7 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
   .stats-grid{grid-template-columns:repeat(2,1fr)}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -260,12 +290,20 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
   </div>
 
   <nav class="sidebar-nav">
-    <div class="sidebar-section">Tuần hiện tại</div>
-    <div class="nav-item active">
-      <span class="nav-ico">📅</span>
-      <span id="sideWeekLabel">Chọn tuần...</span>
+    <div class="sidebar-section">Báo cáo</div>
+    <div class="nav-item rpt-nav active" data-rpt="sec1" onclick="showRptSection('sec1')">
+      <span class="nav-ico">📋</span><span>Công việc</span>
     </div>
-
+    <div class="nav-item rpt-nav" data-rpt="sec2" onclick="showRptSection('sec2')">
+      <span class="nav-ico">📊</span><span>Giao dịch</span>
+    </div>
+    <div class="nav-item rpt-nav" data-rpt="sec3" onclick="showRptSection('sec3')">
+      <span class="nav-ico">⚠️</span><span>Lỗi EDC</span>
+    </div>
+    <div class="nav-item rpt-nav" data-rpt="sec4" onclick="showRptSection('sec4')">
+      <span class="nav-ico">⚙️</span><span>Vận hành</span>
+    </div>
+    <div class="nav-sep"></div>
     <div class="sidebar-section">Danh sách tuần</div>
     <div class="week-list" id="weekList">
       <div style="padding:8px 12px;font-size:11px;color:rgba(255,255,255,0.3)">Đang tải...</div>
@@ -331,6 +369,9 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
 
   <!-- CONTENT -->
   <div class="content">
+
+    <!-- ══ MỤC 1: CÔNG VIỆC ══ -->
+    <div id="sec1" class="rpt-section active">
 
     <!-- NEW WEEK BAR -->
     <div class="new-week-bar">
@@ -424,11 +465,180 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
       </div>
     </div>
 
+    </div><!-- /sec1 -->
+
+    <!-- ══ MỤC 2: GIAO DỊCH ══ -->
+    <div id="sec2" class="rpt-section">
+      <div class="rpt-section-title">📊 Báo cáo Giao dịch</div>
+
+      <!-- DATE PICKER + FETCH BAR -->
+      <div class="new-week-bar" style="margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <span class="nwb-label">📅 Chọn khoảng ngày:</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;font-weight:600;color:var(--text2)">Từ:</label>
+            <input type="date" id="txFromDate" class="btn" style="padding:6px 10px;font-size:12px;cursor:pointer">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:12px;font-weight:600;color:var(--text2)">Đến:</label>
+            <input type="date" id="txToDate" class="btn" style="padding:6px 10px;font-size:12px;cursor:pointer">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+          <button class="btn btn-sm" onclick="txSetThisWeek()">Tuần này</button>
+          <button class="btn btn-sm" onclick="txSetLastWeek()">Tuần trước</button>
+          <button class="btn btn-sm" id="btnTokenConfig" onclick="openLoginModal()" title="Đăng nhập ToroG">🔐 Đăng nhập</button>
+          <button class="btn btn-primary btn-sm" id="btnFetchTx" onclick="fetchTransactionData()">⬇ Tải dữ liệu</button>
+        </div>
+        <div id="txStatus" style="width:100%;font-size:12px;color:var(--text3);display:none"></div>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="stats-grid" id="txKpiGrid" style="display:none">
+        <div class="stat-card">
+          <div class="stat-icon si-blue">🔢</div>
+          <div class="stat-body">
+            <div class="stat-lbl">Tổng giao dịch</div>
+            <div class="stat-val" id="txTotal">0</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-green">✅</div>
+          <div class="stat-body">
+            <div class="stat-lbl">Thành công</div>
+            <div class="stat-val" id="txSuccess" style="color:var(--green)">0</div>
+            <div class="stat-sub" id="txSuccessRate"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-orange">❌</div>
+          <div class="stat-body">
+            <div class="stat-lbl">Thất bại</div>
+            <div class="stat-val" id="txFailed" style="color:var(--red)">0</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-amber">💰</div>
+          <div class="stat-body">
+            <div class="stat-lbl">Doanh số (VNĐ)</div>
+            <div class="stat-val" id="txAmount" style="font-size:18px">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div id="txCharts" style="display:none">
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+          <!-- Bar chart: theo ngày -->
+          <div class="section-block">
+            <div class="section-block-title">📈 Giao dịch theo ngày</div>
+            <div style="padding:16px;height:280px;position:relative">
+              <canvas id="chartByDate"></canvas>
+            </div>
+          </div>
+          <!-- Donut: tỉ lệ -->
+          <div class="section-block">
+            <div class="section-block-title">🍩 Tỉ lệ thành công</div>
+            <div style="padding:16px;height:280px;position:relative;display:flex;align-items:center;justify-content:center">
+              <canvas id="chartSuccessRate"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- Bar chart: theo trạng thái -->
+        <div class="section-block" id="txStatusBlock" style="display:none">
+          <div class="section-block-title">📊 Phân bổ theo trạng thái</div>
+          <div style="padding:16px;height:240px;position:relative">
+            <canvas id="chartByStatus"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLACEHOLDER khi chưa có data -->
+      <div id="txPlaceholder" class="rpt-placeholder">
+        <span class="rpt-placeholder-ico">📁</span>
+        <div class="rpt-placeholder-title">Chọn khoảng ngày và bấm "Tải dữ liệu"</div>
+        <div class="rpt-placeholder-sub">
+          Dữ liệu sẽ được tự động lấy từ cổng thanh toán ToroG<br>
+          và lưu vào Google Sheets để tạo biểu đồ phân tích.
+        </div>
+      </div>
+
+      <!-- ERROR -->
+      <div id="txError" style="display:none" class="rpt-placeholder">
+        <span class="rpt-placeholder-ico">⚠️</span>
+        <div class="rpt-placeholder-title" id="txErrorTitle">Lỗi tải dữ liệu</div>
+        <div class="rpt-placeholder-sub" id="txErrorDesc"></div>
+      </div>
+    </div>
+
+    <!-- ══ MỤC 3: LỖI EDC ══ -->
+    <div id="sec3" class="rpt-section">
+      <div class="rpt-section-title">⚠️ Báo cáo lỗi EDC</div>
+      <div id="sec3Content">
+        <div class="rpt-placeholder">
+          <span class="rpt-placeholder-ico">📋</span>
+          <div class="rpt-placeholder-title">Chưa có dữ liệu lỗi EDC</div>
+          <div class="rpt-placeholder-sub">Chọn tuần bên trái để tải dữ liệu lỗi EDC.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MỤC 4: VẬN HÀNH ══ -->
+    <div id="sec4" class="rpt-section">
+      <div class="rpt-section-title">⚙️ Báo cáo vận hành</div>
+      <div id="sec4Content">
+        <div class="rpt-placeholder">
+          <span class="rpt-placeholder-ico">⚙️</span>
+          <div class="rpt-placeholder-title">Chưa có dữ liệu vận hành</div>
+          <div class="rpt-placeholder-sub">Chọn tuần bên trái để tải dữ liệu vận hành.</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 
+<!-- TOROG LOGIN MODAL -->
+<div class="modal-backdrop" id="tokenModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">🔐 Đăng nhập ToroG</div>
+    <div class="modal-desc">
+      <div style="margin-bottom:14px;padding:10px 14px;background:var(--green-light);border-radius:8px;font-size:12px;color:#065F46;line-height:1.6">
+        ✅ Chỉ cần đăng nhập <b>1 lần</b> — hệ thống sẽ tự động làm mới token khi hết hạn.
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Tên đăng nhập:</label>
+        <input id="torogUsername" type="text" autocomplete="username"
+          style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;outline:none;transition:border .15s;font-family:var(--font)"
+          placeholder="username"
+          onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter') document.getElementById('torogPassword').focus()">
+      </div>
+
+      <div style="margin-bottom:6px">
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Mật khẩu:</label>
+        <div style="position:relative">
+          <input id="torogPassword" type="password" autocomplete="current-password"
+            style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 36px 9px 12px;font-size:13px;outline:none;transition:border .15s;font-family:var(--font)"
+            placeholder="••••••••"
+            onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter') torogDoLogin()">
+          <span onclick="togglePwd()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:15px;color:var(--text3)" title="Hiện/ẩn mật khẩu">👁</span>
+        </div>
+      </div>
+
+      <div id="loginStatus" style="min-height:24px;margin-top:12px;font-size:12px;line-height:1.6"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-sm" onclick="closeLoginModal()">Đóng</button>
+      <button class="btn btn-sm btn-primary" id="btnDoLogin" onclick="torogDoLogin()">🔐 Đăng nhập</button>
+    </div>
+  </div>
+</div>
+
 <!-- SAVE BAR -->
-<div class="savebar">
+<div class="savebar" id="savebar">
   <div class="save-status" id="saveLbl">Chưa chọn tuần</div>
   <div class="save-btns" id="saveBtnsEl">
     <button class="btn btn-sm btn-danger" id="btnClear" onclick="clearAll()" disabled>Xóa dữ liệu tuần</button>
@@ -451,6 +661,33 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
 <div class="toast" id="toast"></div>
 
 <script>
+
+// ══ SECTION SWITCHING ══════════════════════════
+function showRptSection(id) {
+  // Toggle sections
+  document.querySelectorAll('.rpt-section').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById(id);
+  if (el) el.classList.add('active');
+
+  // Update nav active state (only rpt-nav items)
+  document.querySelectorAll('.rpt-nav').forEach(function(n){ n.classList.remove('active'); });
+  var nav = document.querySelector('.rpt-nav[data-rpt="'+id+'"]');
+  if (nav) nav.classList.add('active');
+
+  // Show/hide savebar — chỉ hiện ở mục Công việc
+  var savebar = document.getElementById('savebar') || document.querySelector('.savebar');
+  if (savebar) savebar.style.display = (id === 'sec1') ? '' : 'none';
+
+  // Update topheader title
+  var titles = {
+    sec1: 'Báo cáo công việc',
+    sec2: 'Báo cáo Giao dịch',
+    sec3: 'Báo cáo lỗi EDC',
+    sec4: 'Báo cáo vận hành'
+  };
+  var thTitle = document.getElementById('thTitle');
+  if (thTitle) thTitle.textContent = titles[id] || 'Báo cáo';
+}
 
 // ── SIDEBAR WEEK LIST ──
 function buildSideWeekList() {
@@ -476,7 +713,7 @@ function buildSideWeekList() {
   }
 
   container.innerHTML = sorted.map(function(w) {
-    return '<div class="week-item'+(w===curWeek?' active':'')+'" onclick="switchWeek(''+w.replace(/'/g,"\'")+'')">'
+    return '<div class="week-item'+(w===curWeek?' active':'')+'" onclick="switchWeek(\''+w.replace(/'/g,"\\'")+'\')">'
       +'<div class="week-dot"></div>'
       +'<span>'+w+'</span>'
       +'</div>';
@@ -625,8 +862,10 @@ function reloadFromSheet() {
 // ══════════════════════════════════════════════
 function buildWeekSel() {
   var s = document.getElementById('weekSel');
-  var cur = s.value;
-  s.innerHTML = '<option value="">-- Chọn tuần --</option>';
+  var cur = s ? s.value : (curWeek || '');
+  if (s) {
+    s.innerHTML = '<option value="">-- Chọn tuần --</option>';
+  }
   // Sort moi nhat len dau
   // Parse ngay bat dau tu ten tuan de sort chinh xac theo thoi gian
   function parseWeekStart(name) {
@@ -654,7 +893,7 @@ function buildWeekSel() {
     o.textContent = 'Tuần ' + sorted[i];
     s.appendChild(o);
   }
-  if (cur && weeksList.indexOf(cur) >= 0) s.value = cur;
+  if (s && cur && weeksList.indexOf(cur) >= 0) s.value = cur;
   buildSideWeekList();
 }
 
@@ -669,7 +908,7 @@ function switchWeek(name) {
     return;
   }
   if (dirty && !confirm('Có thay đổi chưa lưu lên Sheets. Tiếp tục?')) {
-    document.getElementById('weekSel').value = curWeek || ''; return;
+    var _ws = document.getElementById('weekSel'); if(_ws) _ws.value = curWeek || ''; return;
   }
   curWeek = name;
   buildSideWeekList();
@@ -728,7 +967,7 @@ function createWeek() {
 
     weeksList.push(name);
     buildWeekSel();
-    document.getElementById('weekSel').value = name;
+    var _wsel = document.getElementById('weekSel'); if (_wsel) _wsel.value = name;
 
     // Reset calendar
     calReset();
@@ -1122,8 +1361,235 @@ function setEditorMode(on) {
   }
 }
 
-// ── INIT ──
-init();
+
+// ══════════════════════════════════════════════
+//  MỤC 2: GIAO DỊCH — FETCH & CHART
+// ══════════════════════════════════════════════
+
+var txChartDate = null, txChartRate = null, txChartStatus = null;
+
+// Set ngày mặc định = tuần này
+(function txInitDates() {
+  var now = new Date();
+  var day = now.getDay() || 7; // 1=Mon, 7=Sun
+  var mon = new Date(now); mon.setDate(now.getDate() - day + 1);
+  var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  function fmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  document.addEventListener('DOMContentLoaded', function(){
+    var f = document.getElementById('txFromDate'), t = document.getElementById('txToDate');
+    if(f) f.value = fmt(mon);
+    if(t) t.value = fmt(sun);
+  });
+})();
+
+function txSetThisWeek() {
+  var now = new Date(), day = now.getDay() || 7;
+  var mon = new Date(now); mon.setDate(now.getDate() - day + 1);
+  var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  function fmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  document.getElementById('txFromDate').value = fmt(mon);
+  document.getElementById('txToDate').value   = fmt(sun);
+}
+
+function txSetLastWeek() {
+  var now = new Date(), day = now.getDay() || 7;
+  var mon = new Date(now); mon.setDate(now.getDate() - day - 6);
+  var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  function fmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  document.getElementById('txFromDate').value = fmt(mon);
+  document.getElementById('txToDate').value   = fmt(sun);
+}
+
+function txSetStatus(msg, isLoading) {
+  var el = document.getElementById('txStatus');
+  el.style.display = 'block';
+  el.innerHTML = isLoading ? '⏳ ' + msg : msg;
+}
+
+function fetchTransactionData() {
+  var fromVal = document.getElementById('txFromDate').value;
+  var toVal   = document.getElementById('txToDate').value;
+  if (!fromVal || !toVal) { showToast('Vui lòng chọn khoảng ngày', 'err'); return; }
+
+  // Convert sang timestamp ms
+  var fromTs = new Date(fromVal + 'T00:00:00').getTime();
+  var toTs   = new Date(toVal   + 'T23:59:59').getTime();
+
+  // UI loading
+  var btn = document.getElementById('btnFetchTx');
+  btn.disabled = true; btn.textContent = '⏳ Đang tải...';
+  txSetStatus('Đang gọi API cổng thanh toán ToroG...', true);
+  document.getElementById('txPlaceholder').style.display = 'none';
+  document.getElementById('txError').style.display = 'none';
+  document.getElementById('txKpiGrid').style.display = 'none';
+  document.getElementById('txCharts').style.display = 'none';
+
+  apiGet({
+    action: 'fetchTransactions',
+    from: fromTs,
+    to: toTs
+  }, function(data, err) {
+    btn.disabled = false; btn.textContent = '⬇ Tải dữ liệu';
+
+    if (err || !data || data.error) {
+      var msg = err || (data && data.error) || 'Lỗi không xác định';
+      document.getElementById('txError').style.display = 'block';
+      document.getElementById('txErrorTitle').textContent = 'Lỗi tải dữ liệu';
+      document.getElementById('txErrorDesc').innerHTML = msg +
+        (msg.indexOf('Bearer') !== -1 || msg.indexOf('token') !== -1
+          ? '<br><br><b>Cách fix:</b> Vào GAS > Project Settings > Script Properties<br>Cập nhật <code>TOROG_BEARER</code> = token mới từ DevTools'
+          : '');
+      txSetStatus('❌ ' + msg, false);
+      return;
+    }
+
+    txSetStatus('✅ Đã tải ' + (data.summary && data.summary.total || 0) + ' giao dịch · Đã lưu vào Sheets: ' + (data.sheetName || ''), false);
+    renderTransactionDashboard(data.summary);
+  });
+}
+
+function renderTransactionDashboard(s) {
+  if (!s || !s.total) {
+    document.getElementById('txPlaceholder').style.display = 'block';
+    document.getElementById('txPlaceholder').querySelector('.rpt-placeholder-title').textContent = 'Không có dữ liệu trong khoảng ngày này';
+    return;
+  }
+
+  // KPI cards
+  document.getElementById('txKpiGrid').style.display = 'grid';
+  document.getElementById('txTotal').textContent   = s.total.toLocaleString('vi-VN');
+  document.getElementById('txSuccess').textContent = s.success.toLocaleString('vi-VN');
+  document.getElementById('txFailed').textContent  = s.failed.toLocaleString('vi-VN');
+  document.getElementById('txSuccessRate').textContent = s.successRate + '% tổng GD';
+  document.getElementById('txAmount').textContent  = formatVND(s.totalAmount);
+
+  // Charts
+  document.getElementById('txCharts').style.display = 'block';
+
+  // 1. Bar chart theo ngày
+  var byDate = s.byDate || {};
+  var dates   = Object.keys(byDate).sort();
+  var sucData = dates.map(function(d){ return byDate[d].success || 0; });
+  var failData= dates.map(function(d){ return byDate[d].failed  || 0; });
+
+  if (txChartDate) txChartDate.destroy();
+  txChartDate = new Chart(document.getElementById('chartByDate'), {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [
+        { label: 'Thành công', data: sucData, backgroundColor: '#10B981', borderRadius: 4 },
+        { label: 'Thất bại',   data: failData, backgroundColor: '#F97316', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        x: { stacked: false, grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: '#E8E8F0' } }
+      }
+    }
+  });
+
+  // 2. Donut tỉ lệ thành công
+  if (txChartRate) txChartRate.destroy();
+  txChartRate = new Chart(document.getElementById('chartSuccessRate'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Thành công', 'Thất bại'],
+      datasets: [{ data: [s.success, s.failed], backgroundColor: ['#10B981','#EF4444'], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: { label: function(ctx){ return ctx.label+': '+ctx.parsed+' ('+Math.round(ctx.parsed/s.total*100)+'%)'; } } }
+      }
+    }
+  });
+
+  // 3. Bar theo trạng thái (nếu có nhiều hơn 2)
+  var byStatus = s.byStatus || {};
+  var statuses = Object.keys(byStatus);
+  if (statuses.length > 2) {
+    document.getElementById('txStatusBlock').style.display = 'block';
+    if (txChartStatus) txChartStatus.destroy();
+    txChartStatus = new Chart(document.getElementById('chartByStatus'), {
+      type: 'bar',
+      data: {
+        labels: statuses,
+        datasets: [{ label: 'Số lượng', data: statuses.map(function(s2){ return byStatus[s2]; }),
+          backgroundColor: '#5B47E0', borderRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true } }
+      }
+    });
+  }
+}
+
+function formatVND(n) {
+  if (!n || n === 0) return '0';
+  if (n >= 1e9) return (n/1e9).toFixed(1) + ' tỷ';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + ' tr';
+  return n.toLocaleString('vi-VN');
+}
+
+// init dates on load
+window.addEventListener('load', function(){
+  txSetThisWeek();
+});
+
+// ── TOROG LOGIN MODAL ──────────────────────────
+function openLoginModal() {
+  document.getElementById('tokenModal').classList.add('open');
+  document.getElementById('loginStatus').innerHTML = '';
+  setTimeout(function(){ document.getElementById('torogUsername').focus(); }, 100);
+}
+function closeLoginModal() {
+  document.getElementById('tokenModal').classList.remove('open');
+  document.getElementById('torogPassword').value = '';
+}
+function togglePwd() {
+  var inp = document.getElementById('torogPassword');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+function torogDoLogin() {
+  var username = (document.getElementById('torogUsername').value || '').trim();
+  var password = (document.getElementById('torogPassword').value || '').trim();
+  if (!username || !password) {
+    document.getElementById('loginStatus').innerHTML =
+      '<span style="color:var(--red)">⚠ Vui lòng nhập đầy đủ username và mật khẩu</span>';
+    return;
+  }
+  var btn = document.getElementById('btnDoLogin');
+  btn.disabled = true; btn.textContent = '⏳ Đang đăng nhập...';
+  document.getElementById('loginStatus').innerHTML =
+    '<span style="color:var(--text3)">Đang kết nối tới ToroG API...</span>';
+
+  apiGet({ action: 'saveTorogCredentials', username: username, password: password },
+    function(data, err) {
+      btn.disabled = false; btn.textContent = '🔐 Đăng nhập';
+      if (err || (data && data.error)) {
+        document.getElementById('loginStatus').innerHTML =
+          '<span style="color:var(--red)">❌ ' + (err || data.error) + '</span>';
+      } else {
+        document.getElementById('loginStatus').innerHTML =
+          '<span style="color:var(--green)">✅ Đăng nhập thành công! Token đã được lưu tự động.<br>Hệ thống sẽ tự làm mới khi hết hạn.</span>';
+        document.getElementById('torogPassword').value = '';
+        // Cập nhật button trạng thái đã đăng nhập
+        document.getElementById('btnTokenConfig').textContent = '✅ ' + username;
+        document.getElementById('btnTokenConfig').style.color = 'var(--green)';
+        setTimeout(closeLoginModal, 2500);
+      }
+    }
+  );
+}
+
 </script>
 </body>
 </html>
