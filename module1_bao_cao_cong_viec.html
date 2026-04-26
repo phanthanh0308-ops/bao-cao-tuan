@@ -1653,16 +1653,6 @@ function parseVNDate(str) {
   return p.length === 3 ? new Date(+p[2], +p[1]-1, +p[0]).getTime() : 0;
 }
 
-  // KPI
-  document.getElementById('txKpiGrid').style.display='grid';
-  document.getElementById('txTotal').textContent   = totals.total.toLocaleString('vi-VN');
-  document.getElementById('txSuccess').textContent = totals.success.toLocaleString('vi-VN');
-  document.getElementById('txVoid').textContent    = (totals.void||0).toLocaleString('vi-VN');
-  document.getElementById('txAmount').textContent  = formatVND(totals.amount);
-  document.getElementById('txRate').textContent    = totals.total>0 ? Math.round(totals.success/totals.total*100)+'% thành công' : '';
-
-  document.getElementById('txCharts').style.display='block';
-
 function formatVND(n) {
   if (!n||n===0) return '0';
   if (n>=1e9) return (n/1e9).toFixed(1)+' tỷ';
@@ -1736,8 +1726,16 @@ function torogDoLogin() {
 
 // ── INIT ── chay sau khi tat ca scripts (ke ca config.js) da load xong
 window.addEventListener('load', function() {
-  init();
-  txLoadThisWeek();
+  // Cho config.js co du thoi gian load
+  if (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.GAS_URL) {
+    init();
+  } else {
+    // Doi them 200ms cho config.js load xong
+    setTimeout(function(){
+      if (typeof APP_CONFIG !== 'undefined') init();
+      else console.error('config.js chua load duoc!');
+    }, 200);
+  }
 });
 
 </script>
