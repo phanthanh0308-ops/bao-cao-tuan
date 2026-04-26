@@ -530,7 +530,8 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
           </div>
           <div class="section-block">
             <div class="section-block-title">🌡️ Heatmap GD theo giờ × ngày</div>
-            <div style="padding:12px 16px;overflow-y:auto;max-height:380px;position:relative" id="txHeatmap"></div>
+            <div id="txHeatmapHeader" style="padding:4px 16px 0"></div>
+            <div style="padding:0 16px 12px;overflow-y:auto;max-height:340px;position:relative" id="txHeatmap"></div>
           </div>
         </div>
 
@@ -1782,13 +1783,17 @@ function renderHeatmap(hourlyRows) {
     return val/maxVal > 0.45 ? '#fff' : '#7B341E';
   }
 
-  var html = '<div style="display:flex;gap:0;align-items:flex-start;width:100%;position:sticky;top:0;z-index:3;background:var(--white);padding-bottom:2px">';
-  html += '<div style="flex-shrink:0;width:72px"></div>';
+  // Header row (date labels) — nằm ngoài scroll container, không bị trôi
+  var headerHtml = '<div style="display:flex;gap:0;align-items:flex-start;width:100%">';
+  headerHtml += '<div style="flex-shrink:0;width:72px"></div>';
   rows.forEach(function(r){
-    html += '<div style="flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--text2);padding-bottom:4px;min-width:0">'+r.date.substring(0,5)+'</div>';
+    headerHtml += '<div style="flex:1;text-align:center;font-size:10px;font-weight:700;color:var(--text2);padding-bottom:4px;min-width:0">'+r.date.substring(0,5)+'</div>';
   });
-  html += '</div>';
+  headerHtml += '</div>';
+  document.getElementById('txHeatmapHeader').innerHTML = headerHtml;
 
+  // Data rows — nằm trong scroll container
+  var html = '';
   HOURS.forEach(function(hh){
     html += '<div style="display:flex;gap:0;align-items:center;margin-bottom:1px;width:100%">';
     html += '<div style="flex-shrink:0;width:72px;font-size:11px;color:var(--text2);text-align:right;padding-right:8px;font-weight:600">'+hh+':00</div>';
@@ -1803,7 +1808,7 @@ function renderHeatmap(hourlyRows) {
   });
 
   document.getElementById('txHeatmap').innerHTML = html
-    + '<div style="margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">'
+    + '<div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">'
     + '<span>Ít</span>'
     + ['#FFF9C4','#FFE082','#FFB300','#FB8C00','#BF360C'].map(function(c){ return '<div style="width:20px;height:12px;background:'+c+'"></div>'; }).join('')
     + '<span>Nhiều</span></div>';
