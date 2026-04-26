@@ -1480,23 +1480,25 @@ function loadWeeklyReport(fromStr, toStr) {
   var done = 0; var results = {};
   function check() {
     done++;
-    if (done === 5) {
+    if (done === 6) {
       var ld = document.getElementById('txLoading');
       if (ld) ld.remove();
       renderFullDashboard(results);
     }
   }
 
-  apiGet({action:'getWeeklyReport', from:toDMY(from),     to:toDMY(to)},
+  apiGet({action:'getWeeklyReport',  from:toDMY(from),     to:toDMY(to)},
     function(d,e){ results.weekly=d||{}; check(); });
-  apiGet({action:'getWeeklyReport', from:toDMY(prevFrom), to:toDMY(prevTo)},
+  apiGet({action:'getWeeklyReport',  from:toDMY(prevFrom), to:toDMY(prevTo)},
     function(d,e){ results.prevWeekly=d||{}; check(); });
-  apiGet({action:'getHourlyReport', from:toDMY(from), to:toDMY(to)},
+  apiGet({action:'getHourlyReport',  from:toDMY(from), to:toDMY(to)},
     function(d,e){ results.hourly=d||{}; check(); });
-  apiGet({action:'getDeviceReport', from:toDMY(from), to:toDMY(to)},
+  apiGet({action:'getDeviceReport',  from:toDMY(from), to:toDMY(to)},
     function(d,e){ results.device=d||{}; check(); });
-  apiGet({action:'getTopMerchants', from:toDMY(from), to:toDMY(to), limit:20},
+  apiGet({action:'getTopMerchants',  from:toDMY(from),     to:toDMY(to),     limit:20},
     function(d,e){ results.merchant=d||{}; check(); });
+  apiGet({action:'getTopMerchants',  from:toDMY(prevFrom), to:toDMY(prevTo), limit:100},
+    function(d,e){ results.prevMerchant=d||{}; check(); });
 }
 
 function renderFullDashboard(results) {
@@ -1617,26 +1619,61 @@ function renderFullDashboard(results) {
     }
   });
 
-  // 5. Top 20 Merchant
-  var merchants = (results.merchant||{}).merchants || [];
+  // 5. Top 20 Merchant với so sánh tuần trước
+  var merchants    = (results.merchant||{}).merchants || [];
+  var prevMerchMap = {};
+  ((results.prevMerchant||{}).merchants || []).forEach(function(m){ prevMerchMap[m.tid] = m.count; });
+
   document.getElementById('topMerchantBody').innerHTML = merchants.map(function(m,i){
+    var prevCnt = prevMerchMap[m.tid] || 0;
+    var cmpHtml = '';
+    if (prevCnt > 0) {
+      var delta = m.count - prevCnt;
+      var pct   = Math.round(Math.abs(delta) / prevCnt * 100);
+      var arrow = delta >= 0 ? '▲' : '▼';
+      var color = delta >= 0 ? '#10B981' : '#EF4444';
+      cmpHtml = ' <span style="font-size:10px;font-weight:700;color:'+color+'">'+arrow+' '+pct+'%</span>';
+    }
     return '<tr>'
       +'<td style="text-align:center" class="td-num">'+(i+1)+'</td>'
       +'<td style="text-align:center;font-family:monospace;font-size:11px;color:var(--primary)">'+m.tid+'</td>'
       +'<td style="text-align:left;font-size:12px">'+m.merchant+'</td>'
-      +'<td style="text-align:center;font-weight:700">'+m.count.toLocaleString('vi-VN')+'</td>'
+      +'<td style="text-align:center;font-weight:700">'+m.count.toLocaleString('vi-VN')+cmpHtml+'</td>'
       +'<td style="text-align:right;font-weight:600;color:var(--primary)">'+formatVND(m.amount||0)+'</td>'
       +'</tr>';
   }).join('');
 
-  // 6. Chi tiết theo ngày (bỏ %, căn giữa)
-  document.getElementById('txDailyBody').innerHTML = rows.map(function(r){
+  // 6. Chi tiết theo ngày — căn giữa + so sánh doanh thu
+  // Tạo map ngày trước → amount (cùng thứ trong tuần, lùi 7 ngày)
+  var prevRows = (results.prevWeekly||{}).rows || [];
+  var prevAmtMap = {};
+  prevRows.forEach(function(r){ prevAmtMap[r.date] = r.amount||0; });
+
+  function dayDelta(curAmt, prevAmt) {
+    if (!prevAmt || prevAmt === 0) return '';
+    var delta = curAmt - prevAmt;
+    var pct   = Math.round(Math.abs(delta) / prevAmt * 100);
+    var arrow = delta >= 0 ? '▲' : '▼';
+    var color = delta >= 0 ? '#10B981' : '#EF4444';
+    return ' <span style="font-size:10px;font-weight:700;color:'+color+'">'+arrow+' '+pct+'%</span>';
+  }
+
+  document.getElementById('txDailyBody').innerHTML = rows.map(function(r) {
+    // Ngày cùng thứ tuần trước (lùi 7 ngày)
+    var curTs   = parseVNDate(r.date);
+    var prevDate= new Date(curTs - 7*86400000);
+    var prevKey = String(prevDate.getDate()).padStart(2,'0')+'/'
+                + String(prevDate.getMonth()+1).padStart(2,'0')+'/'
+                + prevDate.getFullYear();
+    var prevAmt = prevAmtMap[prevKey] || 0;
+    var amtDelta = dayDelta(r.amount||0, prevAmt);
+
     return '<tr>'
-      +'<td style="font-weight:600">'+r.date+'</td>'
+      +'<td style="text-align:center;font-weight:600">'+r.date+'</td>'
       +'<td style="text-align:center;font-weight:700">'+(r.total||0).toLocaleString('vi-VN')+'</td>'
       +'<td style="text-align:center;color:var(--green)">'+(r.success||0).toLocaleString('vi-VN')+'</td>'
       +'<td style="text-align:center;color:var(--amber)">'+(r.void||0).toLocaleString('vi-VN')+'</td>'
-      +'<td style="text-align:right;font-weight:600">'+formatVND(r.amount||0)+'</td>'
+      +'<td style="text-align:center;font-weight:600">'+formatVND(r.amount||0)+amtDelta+'</td>'
       +'<td style="text-align:center">'+(r.VISA||0).toLocaleString('vi-VN')+'</td>'
       +'<td style="text-align:center">'+(r.MASTERCARD||0).toLocaleString('vi-VN')+'</td>'
       +'<td style="text-align:center">'+(r.NAPAS||0).toLocaleString('vi-VN')+'</td>'
