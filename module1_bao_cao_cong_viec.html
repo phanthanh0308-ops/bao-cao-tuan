@@ -1956,14 +1956,37 @@ window.addEventListener('load', function() {
   // Cho config.js co du thoi gian load
   if (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.GAS_URL) {
     init();
+    setTimeout(autoCheckWeek, 1500); // Cho init() xong roi check
   } else {
-    // Doi them 200ms cho config.js load xong
     setTimeout(function(){
-      if (typeof APP_CONFIG !== 'undefined') init();
-      else console.error('config.js chua load duoc!');
+      if (typeof APP_CONFIG !== 'undefined') {
+        init();
+        setTimeout(autoCheckWeek, 1500);
+      } else {
+        console.error('config.js chua load duoc!');
+      }
     }, 200);
   }
 });
+
+// Tự động kiểm tra và tạo tuần mới nếu chưa có
+function autoCheckWeek() {
+  apiGet({ action: 'checkAndCreateCurrentWeek' }, function(data, err) {
+    if (err || !data || data.error) return; // Lỗi thì bỏ qua
+    if (data.created) {
+      var copied = (data.result && data.result.copiedCount) || 0;
+      console.log('[AutoWeek] Tao tuan moi:', data.weekName, '| Copy', copied, 'task');
+      // Reload danh sach tuan va tu dong chon tuan moi
+      setTimeout(function() {
+        fetchWeeks(function() {
+          switchWeek(data.weekName);
+          showToast('✅ Tự động tạo tuần ' + data.weekName
+            + (copied > 0 ? ' — chuyển ' + copied + ' task chưa hoàn thành' : ''), 'ok');
+        });
+      }, 500);
+    }
+  });
+}
 
 </script>
 </body>
