@@ -2296,9 +2296,27 @@ function uploadReportFile(input, fileType) {
       try {
         var bytes = new Uint8Array(atob(base64).split('').map(function(c){return c.charCodeAt(0);}));
         var wb    = XLSX.read(bytes, {type:'array', cellDates:true});
-        var ws    = wb.Sheets[wb.SheetNames[0]];
+        // Tim sheet Data hoac lay sheet dau tien
+        var wsName = wb.SheetNames.indexOf('Data') >= 0 ? 'Data' : wb.SheetNames[0];
+        var ws     = wb.Sheets[wsName];
+        // Override dimension de doc het rows (file tu he thong co the bi sai dimension)
+        var allCells = Object.keys(ws).filter(function(k){ return k[0] !== '!'; });
+        if (allCells.length > 0) {
+          var maxRow = 0;
+          allCells.forEach(function(k){
+            var r = XLSX.utils.decode_cell(k).r;
+            if (r > maxRow) maxRow = r;
+          });
+          var maxCol = 0;
+          allCells.forEach(function(k){
+            var c = XLSX.utils.decode_cell(k).c;
+            if (c > maxCol) maxCol = c;
+          });
+          ws['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:maxRow,c:maxCol}});
+        }
         parsedRows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
         if (parsedRows[1] && parsedRows[1][0]) exportDate = String(parsedRows[1][0]);
+        console.log('[Ticket] Rows read:', parsedRows.length);
       } catch(ex) { console.warn('Parse error:', ex); }
     }
 
