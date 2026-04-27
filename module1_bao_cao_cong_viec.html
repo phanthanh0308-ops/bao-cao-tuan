@@ -1295,8 +1295,10 @@ function updateStats() {
     var ts = (rows[i].ts||'').toLowerCase().replace(/\s+/g,'');
     if(ts==='done') done++;
     else if(ts==='danglam'||ts==='đanglàm'||ts==='danglàm') doing++;
-    // Chưa có timeline = tất cả status còn lại (không phải Done, không phải Đang làm)
-    if(ts!=='done' && ts!=='danglam' && ts!=='đanglàm' && ts!=='danglàm') noTL++;
+    // Chưa co timeline = chi tinh trang thai "Chua co timeline", con lai khong tinh
+    var NOTL_STA = ['chuacotimeline','chua co timeline','chuácotimeline'];
+    var tsNorm = ts.replace(/\s+/g,'').replace(/[àáạảã]/g,'a').replace(/[đ]/g,'d');
+    if(NOTL_STA.indexOf(tsNorm) >= 0) noTL++;
   }
   document.getElementById('sTotal').textContent=t;
   document.getElementById('sDone').textContent=done;
