@@ -761,7 +761,7 @@ function showRptSection(id) {
   if (nav) nav.classList.add('active');
   // Auto load Drive files khi vao Vận hành
   if (id === 'sec4' && typeof curWeek !== 'undefined' && curWeek) {
-    loadSec4WeekFiles();
+    setTimeout(loadSec4WeekFiles, 100);
   }
 
   // Show/hide savebar — chỉ hiện ở mục Công việc
@@ -1008,6 +1008,11 @@ function switchWeek(name) {
     var _ws = document.getElementById('weekSel'); if(_ws) _ws.value = curWeek || ''; return;
   }
   curWeek = name;
+  // Neu dang o sec4, reload files
+  var activeSec = document.querySelector('.rpt-section.active');
+  if (activeSec && activeSec.id === 'sec4') {
+    setTimeout(loadSec4WeekFiles, 100);
+  }
   buildSideWeekList();
   var sideLabel = document.getElementById('sideWeekLabel');
   if (sideLabel) sideLabel.textContent = name || 'Chọn tuần...';
