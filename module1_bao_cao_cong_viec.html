@@ -622,11 +622,74 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
     <div id="sec3" class="rpt-section">
       <div class="rpt-section-title">⚠️ Báo cáo lỗi EDC</div>
       <div id="sec3Content">
-        <div class="rpt-placeholder">
-          <span class="rpt-placeholder-ico">📋</span>
-          <div class="rpt-placeholder-title">Chưa có dữ liệu lỗi EDC</div>
-          <div class="rpt-placeholder-sub">Chọn tuần bên trái để tải dữ liệu lỗi EDC.</div>
+
+        <!-- Upload zone -->
+        <div class="section-block" id="edcUploadBlock">
+          <div class="section-block-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>📂 Upload file EDC</span>
+            <span id="edcUploadStatus" style="font-size:12px;font-weight:400;color:var(--text2)"></span>
+          </div>
+          <div id="edcDropZone"
+            style="border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--card)"
+            onclick="document.getElementById('edcFileInput').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'"
+            ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--card)'"
+            ondrop="edcHandleDrop(event)">
+            <div style="font-size:32px;margin-bottom:8px">📊</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Kéo thả hoặc click để chọn file</div>
+            <div style="font-size:12px;color:var(--text2)">File Excel (.xlsx) xuất từ hệ thống EDC Event Tracking</div>
+            <input type="file" id="edcFileInput" accept=".xlsx,.xls" style="display:none" onchange="edcHandleFile(this.files[0])">
+          </div>
+          <div id="edcParseProgress" style="display:none;margin-top:12px">
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px" id="edcParseMsg">Đang đọc file...</div>
+            <div style="background:var(--border);border-radius:4px;height:6px">
+              <div id="edcParseBar" style="background:var(--primary);height:6px;border-radius:4px;width:0%;transition:width .3s"></div>
+            </div>
+          </div>
         </div>
+
+        <!-- Summary Cards -->
+        <div id="edcSummaryBlock" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:13px;color:var(--text2)" id="edcFileInfo"></div>
+            <button onclick="edcSaveSummary()" id="edcSaveBtn" style="background:#10B981;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">💾 Lưu lên Sheet</button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+
+            <!-- Card: Tổng Lỗi -->
+            <div class="section-block" style="padding:20px 24px">
+              <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.5px;margin-bottom:12px">⚠️ TỔNG LỖI</div>
+              <div style="font-size:36px;font-weight:800;color:var(--text);line-height:1" id="edcTongLoi">—</div>
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:11px;color:var(--text2)">Tuần trước: <span id="edcTongLoiPrev" style="font-weight:600">—</span></div>
+                <div id="edcTongLoiDelta" style="font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px"></div>
+              </div>
+            </div>
+
+            <!-- Card: Tổng Terminal -->
+            <div class="section-block" style="padding:20px 24px">
+              <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.5px;margin-bottom:12px">🖥️ TỔNG TERMINAL</div>
+              <div style="font-size:36px;font-weight:800;color:var(--text);line-height:1" id="edcTongTerminal">—</div>
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:11px;color:var(--text2)">Tuần trước: <span id="edcTongTerminalPrev" style="font-weight:600">—</span></div>
+                <div id="edcTongTerminalDelta" style="font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px"></div>
+              </div>
+            </div>
+
+            <!-- Card: Tổng thiết bị -->
+            <div class="section-block" style="padding:20px 24px">
+              <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.5px;margin-bottom:12px">📱 TỔNG THIẾT BỊ GẶP LỖI</div>
+              <div style="font-size:36px;font-weight:800;color:var(--text);line-height:1" id="edcTongThietBi">—</div>
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:11px;color:var(--text2)">Tuần trước: <span id="edcTongThietBiPrev" style="font-weight:600">—</span></div>
+                <div id="edcTongThietBiDelta" style="font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -961,6 +1024,10 @@ function showRptSection(id) {
   if (id === 'sec4' && typeof curWeek !== 'undefined' && curWeek) {
     setTimeout(loadSec4WeekFiles, 100);
   }
+  // Auto load EDC summary đã lưu khi vào Lỗi EDC
+  if (id === 'sec3' && curWeek && !_edcCurrentData) {
+    _edcLoadExisting(curWeek);
+  }
 
   // Show/hide savebar — chỉ hiện ở mục Công việc
   var savebar = document.getElementById('savebar') || document.querySelector('.savebar');
@@ -1215,6 +1282,8 @@ function switchWeek(name) {
   _thietBiRows = [];
   // Reset Ton kho
   _tonKhoRows  = [];
+  // Reset EDC
+  if (typeof _edcReset === 'function') _edcReset();
   // Reset Email
   _emailRows        = typeof _emailRows        !== 'undefined' ? [] : _emailRows;
   _emailPendingRows = typeof _emailPendingRows !== 'undefined' ? [] : _emailPendingRows;
@@ -3465,6 +3534,203 @@ function _cfgSaveDone(btn, status, hasErr, sections) {
   setTimeout(function(){ btn.textContent = '💾 Lưu cấu hình'; }, 3000);
 }
 
+
+// ============================================================
+//  LỖI EDC — Upload, Parse, Summary
+// ============================================================
+var _edcCurrentData = null; // { tongLoi, tongTerminal, tongThietBi, fileName, ngayXuat }
+
+function edcHandleDrop(e) {
+  e.preventDefault();
+  var zone = document.getElementById('edcDropZone');
+  zone.style.borderColor = 'var(--border)';
+  zone.style.background  = 'var(--card)';
+  var files = e.dataTransfer.files;
+  if (files && files[0]) edcHandleFile(files[0]);
+}
+
+function edcHandleFile(file) {
+  if (!requireLogin("Vui lòng đăng nhập để upload file EDC!")) return;
+  if (!file) return;
+  if (!curWeek) { showToast('Vui lòng chọn tuần trước!', 'err'); return; }
+
+  var ext = file.name.split('.').pop().toLowerCase();
+  if (ext !== 'xlsx' && ext !== 'xls') {
+    showToast('Vui lòng chọn file Excel (.xlsx)', 'err'); return;
+  }
+
+  document.getElementById('edcParseProgress').style.display = 'block';
+  document.getElementById('edcParseMsg').textContent = 'Đang đọc file...';
+  document.getElementById('edcParseBar').style.width = '20%';
+  document.getElementById('edcUploadStatus').textContent = '⏳ Đang xử lý: ' + file.name;
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      document.getElementById('edcParseBar').style.width = '50%';
+      document.getElementById('edcParseMsg').textContent = 'Đang phân tích dữ liệu...';
+
+      var data = new Uint8Array(e.target.result);
+      var wb   = XLSX.read(data, { type: 'array' });
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+
+      // File có 2 dòng header phụ ở đầu — tìm hàng header thực (có cột "Terminal ID")
+      var rawArr = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      var headerRowIdx = -1;
+      for (var hi = 0; hi < Math.min(rawArr.length, 6); hi++) {
+        if (rawArr[hi].indexOf('Terminal ID') >= 0) { headerRowIdx = hi; break; }
+      }
+      if (headerRowIdx < 0) { showToast('Không tìm thấy cột Terminal ID trong file!', 'err'); return; }
+
+      var headers  = rawArr[headerRowIdx];
+      var colTerm  = headers.indexOf('Terminal ID');
+      var colSerial = headers.indexOf('Serial thiết bị');
+
+      document.getElementById('edcParseBar').style.width = '75%';
+
+      var tongLoi      = 0;
+      var terminals    = {};
+      var thietBis     = {};
+
+      for (var ri = headerRowIdx + 1; ri < rawArr.length; ri++) {
+        var row = rawArr[ri];
+        if (!row || row.every(function(c){ return c === ''; })) continue;
+        tongLoi++;
+        var termId  = String(row[colTerm]  || '').trim();
+        var serialId = String(row[colSerial] || '').trim();
+        if (termId)   terminals[termId] = 1;
+        if (serialId) thietBis[serialId] = 1;
+      }
+
+      var tongTerminal = Object.keys(terminals).length;
+      var tongThietBi  = Object.keys(thietBis).length;
+
+      _edcCurrentData = {
+        tongLoi:      tongLoi,
+        tongTerminal: tongTerminal,
+        tongThietBi:  tongThietBi,
+        fileName:     file.name,
+        weekName:     curWeek
+      };
+
+      document.getElementById('edcParseBar').style.width = '100%';
+      document.getElementById('edcParseMsg').textContent = '✅ Đọc xong ' + tongLoi.toLocaleString() + ' bản ghi!';
+      document.getElementById('edcUploadStatus').textContent = '✅ ' + file.name;
+
+      // Update cards với số liệu hiện tại trước
+      _edcSetCardValues(tongLoi, tongTerminal, tongThietBi);
+      document.getElementById('edcFileInfo').textContent = '📄 ' + file.name + '  |  Tuần: ' + curWeek;
+      document.getElementById('edcSummaryBlock').style.display = 'block';
+
+      // Load previous để tính delta
+      _edcLoadPrevious(curWeek, tongLoi, tongTerminal, tongThietBi);
+
+      setTimeout(function(){ document.getElementById('edcParseProgress').style.display = 'none'; }, 1500);
+
+    } catch(err) {
+      showToast('Lỗi đọc file: ' + err.message, 'err');
+      document.getElementById('edcUploadStatus').textContent = '❌ Lỗi đọc file';
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function _edcLoadPrevious(weekName, curLoi, curTerm, curTB) {
+  apiGet({ action: 'getEdcSummary', weekName: weekName }, function(res) {
+    var prev = res && res.previous;
+    _edcRenderDelta('edcTongLoiDelta',      'edcTongLoiPrev',      curLoi,  prev ? prev.tongLoi      : null);
+    _edcRenderDelta('edcTongTerminalDelta', 'edcTongTerminalPrev', curTerm, prev ? prev.tongTerminal : null);
+    _edcRenderDelta('edcTongThietBiDelta',  'edcTongThietBiPrev',  curTB,   prev ? prev.tongThietBi  : null);
+  }, function() { /* Không có prev - bỏ qua */ });
+}
+
+function _edcSetCardValues(loi, term, tb) {
+  document.getElementById('edcTongLoi').textContent      = loi.toLocaleString();
+  document.getElementById('edcTongTerminal').textContent = term.toLocaleString();
+  document.getElementById('edcTongThietBi').textContent  = tb.toLocaleString();
+}
+
+function _edcRenderDelta(deltaId, prevId, cur, prevVal) {
+  var prevEl  = document.getElementById(prevId);
+  var deltaEl = document.getElementById(deltaId);
+  if (prevVal === null || prevVal === undefined) {
+    prevEl.textContent  = '—';
+    deltaEl.textContent = '';
+    return;
+  }
+  prevEl.textContent = prevVal.toLocaleString();
+  if (prevVal === 0) {
+    deltaEl.textContent    = '—';
+    deltaEl.style.background = 'var(--border)';
+    deltaEl.style.color      = 'var(--text2)';
+    return;
+  }
+  var pct   = ((cur - prevVal) / prevVal * 100).toFixed(1);
+  var up    = cur > prevVal;
+  var same  = cur === prevVal;
+  // Lỗi tăng = xấu (đỏ), giảm = tốt (xanh)
+  deltaEl.textContent    = same ? '= 0%' : (up ? '▲ +' : '▼ ') + pct + '%';
+  deltaEl.style.background = same ? 'var(--border)' : (up ? '#FEE2E2' : '#D1FAE5');
+  deltaEl.style.color      = same ? 'var(--text2)'  : (up ? '#EF4444' : '#10B981');
+}
+
+function edcSaveSummary() {
+  if (!requireLogin("Vui lòng đăng nhập để lưu!")) return;
+  if (!_edcCurrentData || !curWeek) { showToast('Chưa có dữ liệu để lưu!', 'err'); return; }
+  var btn = document.getElementById('edcSaveBtn');
+  btn.disabled = true; btn.textContent = '⏳ Đang lưu...';
+  apiGet({
+    action:   'saveEdcSummary',
+    weekName: curWeek,
+    summary:  JSON.stringify({
+      tongLoi:      _edcCurrentData.tongLoi,
+      tongTerminal: _edcCurrentData.tongTerminal,
+      tongThietBi:  _edcCurrentData.tongThietBi
+    })
+  }, function(res) {
+    btn.disabled = false;
+    if (res && res.success) {
+      btn.textContent = '✅ Đã lưu!';
+      showToast('Đã lưu tổng hợp EDC tuần ' + curWeek, 'ok');
+    } else {
+      btn.textContent = '❌ Lỗi!';
+      showToast('Lỗi lưu: ' + (res && res.error || ''), 'err');
+    }
+    setTimeout(function(){ btn.textContent = '💾 Lưu lên Sheet'; btn.disabled = false; }, 2500);
+  }, function() {
+    btn.disabled = false; btn.textContent = '❌ Lỗi kết nối';
+    setTimeout(function(){ btn.textContent = '💾 Lưu lên Sheet'; }, 2500);
+  });
+}
+
+// Reset EDC khi đổi tuần
+function _edcReset() {
+  _edcCurrentData = null;
+  document.getElementById('edcSummaryBlock').style.display = 'none';
+  document.getElementById('edcParseProgress').style.display = 'none';
+  document.getElementById('edcUploadStatus').textContent = '';
+  document.getElementById('edcFileInput').value = '';
+  // Nếu đang ở sec3 → load summary đã lưu (nếu có)
+  if (curWeek) _edcLoadExisting(curWeek);
+}
+
+function _edcLoadExisting(weekName) {
+  apiGet({ action: 'getEdcSummary', weekName: weekName }, function(res) {
+    if (!res || !res.current) return;
+    var c = res.current, p = res.previous;
+    _edcCurrentData = {
+      tongLoi: c.tongLoi, tongTerminal: c.tongTerminal, tongThietBi: c.tongThietBi,
+      weekName: weekName
+    };
+    _edcSetCardValues(c.tongLoi, c.tongTerminal, c.tongThietBi);
+    document.getElementById('edcFileInfo').textContent = '📊 Dữ liệu đã lưu  |  Tuần: ' + weekName;
+    document.getElementById('edcSummaryBlock').style.display = 'block';
+    _edcRenderDelta('edcTongLoiDelta',      'edcTongLoiPrev',      c.tongLoi,      p ? p.tongLoi      : null);
+    _edcRenderDelta('edcTongTerminalDelta', 'edcTongTerminalPrev', c.tongTerminal, p ? p.tongTerminal : null);
+    _edcRenderDelta('edcTongThietBiDelta',  'edcTongThietBiPrev',  c.tongThietBi,  p ? p.tongThietBi  : null);
+  }, function(){});
+}
 
 </script>
 </body>
