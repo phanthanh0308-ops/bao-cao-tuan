@@ -3589,7 +3589,8 @@ function edcHandleFile(file) {
       var data = new Uint8Array(evt.target.result);
       var wb;
       try {
-        wb = XLSX.read(data, { type: 'array', sheetStubs: true });
+        // Dùng config giống module Ticket đang hoạt động — KHÔNG dùng sheetStubs
+        wb = XLSX.read(data, { type: 'array', cellDates: false, cellNF: false, cellText: false });
       } catch(xlsxErr) {
         alert('Lỗi đọc Excel: ' + xlsxErr.message);
         if (progressEl) progressEl.style.display = 'none';
@@ -3600,22 +3601,34 @@ function edcHandleFile(file) {
       if (!wb.SheetNames || wb.SheetNames.length === 0) {
         alert('File Excel không có sheet nào!'); return;
       }
+
+      console.log('[EDC] Sheets:', wb.SheetNames);
       var ws = wb.Sheets[wb.SheetNames[0]];
+      console.log('[EDC] Sheet ref:', ws['!ref']);
 
       if (barEl) barEl.style.width = '60%';
       if (msgEl) msgEl.textContent = 'Đang đọc dữ liệu...';
 
-      // Chuyển sang mảng 2D để tìm header
-      var rawArr = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      // Chuyển sang mảng 2D — dùng defval: null như module Ticket
+      var rawArr = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+      console.log('[EDC] Total rows (rawArr.length):', rawArr.length);
 
       // Tìm hàng header thực chứa "Terminal ID"
       var headerRowIdx = -1;
       for (var hi = 0; hi < Math.min(rawArr.length, 10); hi++) {
-        var rowStr = String(rawArr[hi].join('|'));
-        if (rowStr.indexOf('Terminal ID') >= 0) { headerRowIdx = hi; break; }
+        var row = rawArr[hi];
+        if (!row) continue;
+        for (var ci0 = 0; ci0 < row.length; ci0++) {
+          if (String(row[ci0] || '').trim() === 'Terminal ID') {
+            headerRowIdx = hi; break;
+          }
+        }
+        if (headerRowIdx >= 0) break;
       }
+      console.log('[EDC] headerRowIdx:', headerRowIdx);
+
       if (headerRowIdx < 0) {
-        alert('Không tìm thấy cột "Terminal ID" trong file!\nVui lòng kiểm tra đúng file EDC Event Tracking.');
+        alert('Không tìm thấy cột "Terminal ID" trong file!\n\nFile có ' + rawArr.length + ' dòng.\nVui lòng kiểm tra đúng file EDC Event Tracking.');
         if (progressEl) progressEl.style.display = 'none';
         return;
       }
@@ -3623,14 +3636,15 @@ function edcHandleFile(file) {
       var headers   = rawArr[headerRowIdx];
       var colTerm   = -1, colSerial = -1;
       for (var ci = 0; ci < headers.length; ci++) {
-        var h = String(headers[ci]).trim();
-        if (h === 'Terminal ID')    colTerm   = ci;
+        var h = String(headers[ci] || '').trim();
+        if (h === 'Terminal ID')     colTerm   = ci;
         if (h === 'Serial thiết bị') colSerial = ci;
       }
+      console.log('[EDC] colTerm:', colTerm, 'colSerial:', colSerial);
 
       if (colTerm < 0 || colSerial < 0) {
-        alert('Thiếu cột bắt buộc:\n- Terminal ID: ' + (colTerm >= 0 ? 'OK' : 'THIẾU') +
-              '\n- Serial thiết bị: ' + (colSerial >= 0 ? 'OK' : 'THIẾU'));
+        alert('Thiếu cột bắt buộc:\n- Terminal ID: ' + (colTerm >= 0 ? 'OK (' + colTerm + ')' : 'THIẾU') +
+              '\n- Serial thiết bị: ' + (colSerial >= 0 ? 'OK (' + colSerial + ')' : 'THIẾU'));
         if (progressEl) progressEl.style.display = 'none';
         return;
       }
@@ -3641,17 +3655,21 @@ function edcHandleFile(file) {
       var tongLoi = 0, terminals = {}, thietBis = {};
       for (var ri = headerRowIdx + 1; ri < rawArr.length; ri++) {
         var row = rawArr[ri];
-        // Bỏ qua dòng trống hoàn toàn
+        if (!row) continue;
+        // Bỏ qua dòng hoàn toàn trống
         var hasVal = false;
-        for (var ci2 = 0; ci2 < row.length; ci2++) { if (row[ci2] !== '') { hasVal = true; break; } }
+        for (var ci2 = 0; ci2 < row.length; ci2++) {
+          if (row[ci2] !== null && row[ci2] !== undefined && row[ci2] !== '') { hasVal = true; break; }
+        }
         if (!hasVal) continue;
 
         tongLoi++;
-        var termId   = String(row[colTerm]   || '').trim();
-        var serialId = String(row[colSerial] || '').trim();
+        var termId   = row[colTerm]   != null ? String(row[colTerm]).trim()   : '';
+        var serialId = row[colSerial] != null ? String(row[colSerial]).trim() : '';
         if (termId)   terminals[termId] = 1;
         if (serialId) thietBis[serialId] = 1;
       }
+      console.log('[EDC] tongLoi:', tongLoi, 'terminals:', Object.keys(terminals).length, 'thietBis:', Object.keys(thietBis).length);
 
       var tongTerminal = Object.keys(terminals).length;
       var tongThietBi  = Object.keys(thietBis).length;
