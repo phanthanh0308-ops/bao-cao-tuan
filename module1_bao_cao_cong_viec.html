@@ -3985,18 +3985,43 @@ function edcSaveSummary() {
   }, function(r){ if (!r || r.error) hasErr = true; _checkDone(); },
      function(){ hasErr = true; _checkDone(); });
 
-  // 2. Lưu breakdown (bảng lỗi theo dòng máy)
+  // 2. Lưu breakdown (chia batch 25 dòng/lần tránh URL quá dài)
   var errorMap = _edcCurrentData.errorMap || {};
   var breakdownRows = Object.keys(errorMap).map(function(k) {
     var e = errorMap[k];
-    return { maLoi: k, loaiLoi: e.loaiLoi || '', NAYAX: e.NAYAX, NEXGO: e.NEXGO, P1: e.P1, P2: e.P2, TOTAL: e.TOTAL };
+    return { maLoi: k, loaiLoi: e.loaiLoi||'', NAYAX: e.NAYAX, NEXGO: e.NEXGO, P1: e.P1, P2: e.P2, TOTAL: e.TOTAL };
   });
-  apiGet({
-    action:   'saveEdcBreakdown',
-    weekName: curWeek,
-    rows:     JSON.stringify(breakdownRows)
-  }, function(r){ if (!r || r.error) hasErr = true; _checkDone(); },
-     function(){ hasErr = true; _checkDone(); });
+
+  var CHUNK_SIZE = 25;
+  var chunks = [];
+  for (var ci = 0; ci < breakdownRows.length; ci += CHUNK_SIZE) {
+    chunks.push(breakdownRows.slice(ci, ci + CHUNK_SIZE));
+  }
+
+  if (chunks.length === 0) {
+    // Không có breakdown — vẫn xóa data cũ trên sheet
+    apiGet({ action:'saveEdcBreakdown', weekName:curWeek, rows:'[]', append:'0' },
+      function(r){ if (!r||r.error) hasErr=true; _checkDone(); },
+      function(){ hasErr=true; _checkDone(); });
+    return;
+  }
+
+  // Gửi tuần tự từng chunk
+  (function sendChunk(idx) {
+    apiGet({
+      action:   'saveEdcBreakdown',
+      weekName: curWeek,
+      rows:     JSON.stringify(chunks[idx]),
+      append:   idx === 0 ? '0' : '1'
+    }, function(r) {
+      if (!r || r.error) { hasErr = true; _checkDone(); return; }
+      if (idx + 1 < chunks.length) {
+        sendChunk(idx + 1);
+      } else {
+        _checkDone();
+      }
+    }, function() { hasErr = true; _checkDone(); });
+  })(0);
 }
 
 // Reset EDC khi đổi tuần
