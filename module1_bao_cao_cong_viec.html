@@ -4381,13 +4381,14 @@ function edcSaveSummary() {
   var btn = document.getElementById('edcSaveBtn');
   btn.disabled = true; btn.textContent = '⏳ Đang lưu...';
 
-  var done = 0, hasErr = false;
-  function _checkDone() {
-    if (++done < 3) return;  // chờ cả 3: summary + breakdown + daily
+  var doneCount = 0, totalJobs = 3, hasErr = false;
+  function _jobDone(err) {
+    if (err) hasErr = true;
+    if (++doneCount < totalJobs) return;
     btn.disabled = false;
     if (hasErr) {
       btn.textContent = '❌ Lỗi!';
-      showToast('Lỗi khi lưu dữ liệu EDC', 'err');
+      showToast('Có lỗi khi lưu dữ liệu EDC', 'err');
     } else {
       btn.textContent = '✅ Đã lưu!';
       showToast('Đã lưu EDC tuần ' + curWeek, 'ok');
@@ -4395,7 +4396,7 @@ function edcSaveSummary() {
     setTimeout(function(){ btn.textContent = '💾 Lưu lên Sheet'; btn.disabled = false; }, 2500);
   }
 
-  // 1. Lưu summary (3 cards)
+  // JOB 1: Lưu summary (3 cards)
   apiGet({
     action:   'saveEdcSummary',
     weekName: curWeek,
@@ -4404,62 +4405,50 @@ function edcSaveSummary() {
       tongTerminal: _edcCurrentData.tongTerminal,
       tongThietBi:  _edcCurrentData.tongThietBi
     })
-  }, function(r){ if (!r || r.error) hasErr = true; _checkDone(); },
-     function(){ hasErr = true; _checkDone(); });
+  }, function(r){ _jobDone(!r || r.error); },
+     function(){ _jobDone(true); });
 
-  // 2. Lưu breakdown (chia batch 25 dòng/lần tránh URL quá dài)
+  // JOB 2: Lưu breakdown (chunked 5 dòng/lần)
   var errorMap = _edcCurrentData.errorMap || {};
-  var breakdownRows = Object.keys(errorMap).map(function(k) {
+  var bRows = Object.keys(errorMap).map(function(k) {
     var e = errorMap[k];
     return { maLoi: k, loaiLoi: e.loaiLoi||'', NAYAX: e.NAYAX, NEXGO: e.NEXGO, P1: e.P1, P2: e.P2, TOTAL: e.TOTAL };
   });
-
-  var CHUNK_SIZE = 5; // 5 dòng/chunk — an toàn cho URL GET
+  var CHUNK = 5;
   var chunks = [];
-  for (var ci = 0; ci < breakdownRows.length; ci += CHUNK_SIZE) {
-    chunks.push(breakdownRows.slice(ci, ci + CHUNK_SIZE));
-  }
+  for (var ci = 0; ci < bRows.length; ci += CHUNK) chunks.push(bRows.slice(ci, ci + CHUNK));
 
-  if (chunks.length === 0) {
-    apiGet({ action:'saveEdcBreakdown', weekName:curWeek, rows:'[]', append:'0' },
-      function(r){ if (!r||r.error) hasErr=true; _checkDone(); },
-      function(){ hasErr=true; _checkDone(); });
-    return;
-  }
-
-  // Bước 2: Append từng chunk tuần tự (append=1)
+  // Xóa data cũ trước, rồi append từng chunk
   apiGet({ action:'saveEdcBreakdown', weekName:curWeek, rows:'[]', append:'0' },
-    function(clearRes) {
-      if (!clearRes || clearRes.error) { hasErr = true; _checkDone(); return; }
-      // Gửi từng chunk với append=1
+    function(cr) {
+      if (!cr || cr.error) { _jobDone(true); return; }
+      if (chunks.length === 0) { _jobDone(false); return; }
       (function sendChunk(idx) {
         apiGet({
-          action:   'saveEdcBreakdown',
-          weekName: curWeek,
-          rows:     JSON.stringify(chunks[idx]),
-          append:   '1'
+          action: 'saveEdcBreakdown', weekName: curWeek,
+          rows: JSON.stringify(chunks[idx]), append: '1'
         }, function(r) {
-          if (!r || r.error) { hasErr = true; _checkDone(); return; }
-          if (idx + 1 < chunks.length) {
-            sendChunk(idx + 1);
-          } else {
-            // Lưu daily map sau khi breakdown xong
-            var dailyData = {
-              dailyMap:    _edcCurrentData.dailyMap    || {},
-              errGroupMap: _edcCurrentData.errGroupMap || {}
-            };
-            apiGet({
-              action:   'saveEdcDaily',
-              weekName: curWeek,
-              data:     JSON.stringify(dailyData)
-            }, function(r){ if (!r || r.error) hasErr = true; _checkDone(); },
-               function(){ hasErr = true; _checkDone(); });
-          }
-        }, function() { hasErr = true; _checkDone(); });
+          if (!r || r.error) { _jobDone(true); return; }
+          if (idx + 1 < chunks.length) sendChunk(idx + 1);
+          else _jobDone(false);
+        }, function(){ _jobDone(true); });
       })(0);
     },
-    function() { hasErr = true; _checkDone(); });
+    function(){ _jobDone(true); });
+
+  // JOB 3: Lưu daily (độc lập, không phụ thuộc JOB 2)
+  var dailyPayload = JSON.stringify({
+    dailyMap:    _edcCurrentData.dailyMap    || {},
+    errGroupMap: _edcCurrentData.errGroupMap || {}
+  });
+  apiGet({
+    action:   'saveEdcDaily',
+    weekName: curWeek,
+    data:     dailyPayload
+  }, function(r){ _jobDone(!r || r.error); },
+     function(){ _jobDone(true); });
 }
+
 
 // Reset EDC khi đổi tuần
 function _edcReset() {
