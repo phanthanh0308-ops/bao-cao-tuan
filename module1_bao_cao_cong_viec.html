@@ -682,6 +682,52 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
           </div>
         </div>
 
+        <!-- Row 2: Donut + Daily Line chart -->
+        <div style="display:grid;grid-template-columns:300px 1fr;gap:16px;margin-top:20px" id="edcChartsRow">
+
+          <!-- Donut: Tỉ trọng lỗi theo dòng thiết bị -->
+          <div class="section-block" style="padding:20px">
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:14px">📊 TỈ TRỌNG LỖI</div>
+            <canvas id="edcDonutChart" width="260" height="260" style="display:block;margin:0 auto"></canvas>
+            <div id="edcDonutLegend" style="margin-top:14px;display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+
+          <!-- Line/Bar: Lỗi theo ngày -->
+          <div class="section-block" style="padding:20px">
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:14px">📈 THEO DÕI LỖI THEO NGÀY</div>
+            <div style="position:relative;height:230px">
+              <canvas id="edcDailyChart"></canvas>
+            </div>
+            <div class="tbl-scroll" style="padding:0;margin-top:14px;max-height:200px;overflow-y:auto">
+              <table class="tbl" id="edcDailyTable">
+                <thead style="position:sticky;top:0;z-index:2">
+                  <tr>
+                    <th style="text-align:center;width:90px">NGÀY</th>
+                    <th style="text-align:center;color:#60A5FA">LỖI NEXGO</th>
+                    <th style="text-align:center;color:#F59E0B">LỖI NGÂN HÀNG</th>
+                    <th style="text-align:center;color:#A78BFA">LỖI SUNMI</th>
+                    <th style="text-align:center;color:#10B981">LỖI NGHIỆP VỤ</th>
+                    <th style="text-align:center;font-weight:700">TỔNG LỖI</th>
+                  </tr>
+                </thead>
+                <tbody id="edcDailyBody">
+                  <tr><td colspan="6" style="text-align:center;color:var(--text2);padding:16px">Chưa có dữ liệu</td></tr>
+                </tbody>
+                <tfoot id="edcDailyFoot" style="display:none;position:sticky;bottom:0;z-index:2">
+                  <tr style="background:#E8F4FD;font-weight:700;border-top:2px solid #2d5a9e">
+                    <td style="padding:8px 12px;background:#E8F4FD;color:#1e3a5f">TỔNG</td>
+                    <td style="text-align:center;background:#E8F4FD" id="edcDftNEXGO"></td>
+                    <td style="text-align:center;background:#E8F4FD" id="edcDftNganHang"></td>
+                    <td style="text-align:center;background:#E8F4FD" id="edcDftSUNMI"></td>
+                    <td style="text-align:center;background:#E8F4FD" id="edcDftNghiepVu"></td>
+                    <td style="text-align:center;background:#E8F4FD;font-weight:800" id="edcDftTotal"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Bảng tổng hợp lỗi theo dòng thiết bị -->
         <div style="margin-top:24px" id="edcBreakdownWrap">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
@@ -3398,7 +3444,147 @@ function saveTonKhoReport() {
 }
 
 // ============================================================
-//  CẤU HÌNH MẶC ĐỊNH — Hệ thống động theo tab
+//  EDC CHARTS — Donut + Daily Line/Bar
+// ============================================================
+var _edcDonutInstance = null;
+var _edcDailyInstance = null;
+
+var _EDC_DEV_COLORS = {
+  NAYAX:   { color: '#F59E0B', label: 'Nayax'    },
+  NEXGO:   { color: '#3B82F6', label: 'Nexgo'    },
+  SUNMI_P1:{ color: '#8B5CF6', label: 'Sunmi P1' },
+  SUNMI_P2:{ color: '#EC4899', label: 'Sunmi P2' },
+  OTHER:   { color: '#9CA3AF', label: 'Khác'     },
+};
+
+function _edcRenderDonut(errGroupMap) {
+  var canvas = document.getElementById('edcDonutChart');
+  var legend = document.getElementById('edcDonutLegend');
+  if (!canvas || !errGroupMap) return;
+
+  var labels = [], data = [], colors = [], legendHtml = [];
+  var total  = 0;
+  ['NEXGO','SUNMI_P1','SUNMI_P2','NAYAX','OTHER'].forEach(function(k) {
+    var val = errGroupMap[k] || 0;
+    if (val === 0) return;
+    total += val;
+    var cfg = _EDC_DEV_COLORS[k];
+    labels.push(cfg.label);
+    data.push(val);
+    colors.push(cfg.color);
+  });
+  if (total === 0) return;
+
+  // Legend
+  data.forEach(function(val, i) {
+    var pct = (val / total * 100).toFixed(1);
+    legendHtml.push(
+      '<div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">'
+      + '<div style="display:flex;align-items:center;gap:7px">'
+      + '<span style="width:10px;height:10px;border-radius:50%;background:' + colors[i] + ';display:inline-block;flex-shrink:0"></span>'
+      + '<span>' + labels[i] + '</span></div>'
+      + '<span style="font-weight:700">' + val.toLocaleString() + ' <span style="color:var(--text2);font-weight:400">(' + pct + '%)</span></span>'
+      + '</div>'
+    );
+  });
+  if (legend) legend.innerHTML = legendHtml.join('');
+
+  // Destroy cũ
+  if (_edcDonutInstance) { _edcDonutInstance.destroy(); _edcDonutInstance = null; }
+
+  _edcDonutInstance = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+    options: {
+      responsive: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(ctx) {
+          var pct = (ctx.parsed / total * 100).toFixed(1);
+          return ctx.label + ': ' + ctx.parsed.toLocaleString() + ' (' + pct + '%)';
+        }}}
+      },
+      cutout: '65%'
+    }
+  });
+}
+
+function _edcRenderDailyChart(dailyMap, weekName) {
+  var tbody   = document.getElementById('edcDailyBody');
+  var tfoot   = document.getElementById('edcDailyFoot');
+  var canvas  = document.getElementById('edcDailyChart');
+  if (!tbody || !dailyMap) return;
+
+  // Sort ngày tăng dần
+  var days = Object.keys(dailyMap).sort(function(a, b) {
+    var pa = a.split('/'), pb = b.split('/');
+    return new Date(pa[2],pa[1]-1,pa[0]) - new Date(pb[2],pb[1]-1,pb[0]);
+  });
+  if (days.length === 0) { return; }
+
+  var ftNEXGO = 0, ftNganHang = 0, ftSUNMI = 0, ftNghiepVu = 0, ftTotal = 0;
+
+  var rows = days.map(function(d) {
+    var e = dailyMap[d];
+    ftNEXGO    += e.NEXGO;
+    ftNganHang += e.nganHang;
+    ftSUNMI    += e.SUNMI;
+    ftNghiepVu += e.nghiepVu;
+    ftTotal    += e.total;
+    return '<tr>'
+      + '<td style="text-align:center;font-weight:600">' + d + '</td>'
+      + '<td style="text-align:center;color:#2563EB">' + e.NEXGO.toLocaleString() + '</td>'
+      + '<td style="text-align:center;color:#D97706">' + e.nganHang.toLocaleString() + '</td>'
+      + '<td style="text-align:center;color:#7C3AED">' + e.SUNMI.toLocaleString() + '</td>'
+      + '<td style="text-align:center;color:#10B981">' + e.nghiepVu.toLocaleString() + '</td>'
+      + '<td style="text-align:center;font-weight:700">' + e.total.toLocaleString() + '</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = rows.join('');
+
+  if (tfoot) {
+    tfoot.style.display = 'table-footer-group';
+    document.getElementById('edcDftNEXGO').textContent    = ftNEXGO.toLocaleString();
+    document.getElementById('edcDftNganHang').textContent = ftNganHang.toLocaleString();
+    document.getElementById('edcDftSUNMI').textContent    = ftSUNMI.toLocaleString();
+    document.getElementById('edcDftNghiepVu').textContent = ftNghiepVu.toLocaleString();
+    document.getElementById('edcDftTotal').textContent    = ftTotal.toLocaleString();
+  }
+
+  // Chart
+  if (!canvas) return;
+  if (_edcDailyInstance) { _edcDailyInstance.destroy(); _edcDailyInstance = null; }
+
+  var labels   = days.map(function(d) { var p=d.split('/'); return p[0]+'/'+p[1]; });
+  var nexgoArr = days.map(function(d){ return dailyMap[d].NEXGO; });
+  var nhArr    = days.map(function(d){ return dailyMap[d].nganHang; });
+  var sunmiArr = days.map(function(d){ return dailyMap[d].SUNMI; });
+  var nvArr    = days.map(function(d){ return dailyMap[d].nghiepVu; });
+  var totArr   = days.map(function(d){ return dailyMap[d].total; });
+
+  _edcDailyInstance = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels: labels,
+      datasets: [
+        { type: 'bar',  label: 'Tổng lỗi',        data: totArr,   backgroundColor: 'rgba(59,130,246,0.15)', borderColor: 'rgba(59,130,246,0.4)', borderWidth:1, yAxisID:'y' },
+        { type: 'line', label: 'Lỗi Nexgo',        data: nexgoArr, borderColor: '#3B82F6', backgroundColor:'transparent', borderWidth:2, pointRadius:4, tension:.3, yAxisID:'y' },
+        { type: 'line', label: 'Lỗi ngân hàng',    data: nhArr,    borderColor: '#F59E0B', backgroundColor:'transparent', borderWidth:2, pointRadius:4, tension:.3, yAxisID:'y' },
+        { type: 'line', label: 'Lỗi Sunmi',        data: sunmiArr, borderColor: '#8B5CF6', backgroundColor:'transparent', borderWidth:2, pointRadius:4, tension:.3, yAxisID:'y' },
+        { type: 'line', label: 'Lỗi nghiệp vụ',   data: nvArr,    borderColor: '#10B981', backgroundColor:'transparent', borderWidth:2, pointRadius:4, tension:.3, yAxisID:'y' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, ticks: { font: { size: 11 } }, title: { display: true, text: 'Số lỗi', font:{size:11} } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+
 // ============================================================
 
 // Định nghĩa các section config cho từng tab
@@ -3736,15 +3922,17 @@ function edcHandleFile(file) {
       // ──────────────────────────────────────────────────────────────────
 
       var headers   = rawArr[headerRowIdx];
-      var colTerm   = -1, colSerial = -1, colMaLoi = -1, colLoaiLoi = -1;
+      var colTerm = -1, colSerial = -1, colMaLoi = -1, colLoaiLoi = -1, colThoiGian = -1, colLoaiSK = -1;
       for (var ci = 0; ci < headers.length; ci++) {
         var h = String(headers[ci] || '').trim();
-        if (h === 'Terminal ID')     colTerm    = ci;
-        if (h === 'Serial thiết bị') colSerial  = ci;
-        if (h === 'Mã lỗi')         colMaLoi   = ci;
-        if (h === 'Loại lỗi')       colLoaiLoi = ci;
+        if (h === 'Terminal ID')       colTerm     = ci;
+        if (h === 'Serial thiết bị')   colSerial   = ci;
+        if (h === 'Mã lỗi')           colMaLoi    = ci;
+        if (h === 'Loại lỗi')         colLoaiLoi  = ci;
+        if (h === 'Thời gian xảy ra') colThoiGian = ci;
+        if (h === 'Loại sự kiện')     colLoaiSK   = ci;
       }
-      console.log('[EDC] colTerm:', colTerm, 'colSerial:', colSerial, 'colMaLoi:', colMaLoi, 'colLoaiLoi:', colLoaiLoi);
+      console.log('[EDC] cols:', {colTerm, colSerial, colMaLoi, colLoaiLoi, colThoiGian, colLoaiSK});
 
       if (colTerm < 0 || colSerial < 0) {
         alert('Thiếu cột bắt buộc:\n- Terminal ID: ' + (colTerm >= 0 ? 'OK (' + colTerm + ')' : 'THIẾU') +
@@ -3757,8 +3945,11 @@ function edcHandleFile(file) {
       if (msgEl) msgEl.textContent = 'Đang đếm lỗi...';
 
       var tongLoi = 0, terminals = {}, thietBis = {};
-      // errorMap: { 'maLoi|loaiLoi': { label, NAYAX, NEXGO, P1, P2, OTHER } }
       var errorMap = {};
+      // dailyMap: { 'DD/MM/YYYY': { NEXGO: n, NAYAX: n, SUNMI: n, nganHang: n, nghiepVu: n, thietBi: n, total: n } }
+      var dailyMap = {};
+      // errGroupMap: { NEXGO: n, NAYAX: n, SUNMI_P1: n, SUNMI_P2: n }  (cho donut)
+      var errGroupMap = { NAYAX: 0, NEXGO: 0, SUNMI_P1: 0, SUNMI_P2: 0, OTHER: 0 };
 
       function _getDeviceType(serial) {
         var s = String(serial || '').trim().toUpperCase();
@@ -3767,6 +3958,24 @@ function edcHandleFile(file) {
         if (s.indexOf('PE')  === 0) return 'P1';
         if (s.indexOf('PB')  === 0) return 'P2';
         return 'OTHER';
+      }
+
+      function _getErrGroup(loaiSK) {
+        var sk = String(loaiSK || '').trim();
+        if (['PAYMENT_SERVER','VALIDATE_AMOUNT','GET_ORDER_INFO','CREATE_ORDER','CONFIRM_SETTLE'].indexOf(sk) >= 0)
+          return 'nganHang';
+        if (['SETUP','INIT_EMV'].indexOf(sk) >= 0)
+          return 'nghiepVu';
+        return 'thietBi';
+      }
+
+      function _parseDay(val) {
+        if (!val) return '';
+        var s = String(val).trim();
+        // Định dạng: "DD/MM/YYYY HH:mm:ss" hoặc "DD/MM/YYYY"
+        var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (m) return m[1].padStart(2,'0') + '/' + m[2].padStart(2,'0') + '/' + m[3];
+        return '';
       }
 
       for (var ri = headerRowIdx + 1; ri < rawArr.length; ri++) {
@@ -3796,6 +4005,26 @@ function edcHandleFile(file) {
 
         var devType = _getDeviceType(serialId);
 
+        // Daily breakdown
+        var dayStr = (colThoiGian >= 0 && row[colThoiGian] != null) ? _parseDay(row[colThoiGian]) : '';
+        var loaiSK = (colLoaiSK >= 0 && row[colLoaiSK] != null) ? String(row[colLoaiSK]).trim() : '';
+        var errGrp = _getErrGroup(loaiSK);
+        if (dayStr) {
+          if (!dailyMap[dayStr]) dailyMap[dayStr] = { NAYAX:0, NEXGO:0, SUNMI:0, nganHang:0, nghiepVu:0, thietBi:0, total:0 };
+          dailyMap[dayStr].total++;
+          if (devType === 'NAYAX') dailyMap[dayStr].NAYAX++;
+          else if (devType === 'NEXGO') dailyMap[dayStr].NEXGO++;
+          else if (devType === 'P1' || devType === 'P2') dailyMap[dayStr].SUNMI++;
+          dailyMap[dayStr][errGrp]++;
+        }
+
+        // Donut
+        if (devType === 'NAYAX')  errGroupMap.NAYAX++;
+        else if (devType === 'NEXGO') errGroupMap.NEXGO++;
+        else if (devType === 'P1')    errGroupMap.SUNMI_P1++;
+        else if (devType === 'P2')    errGroupMap.SUNMI_P2++;
+        else                          errGroupMap.OTHER++;
+
         if (!errorMap[errorKey]) {
           errorMap[errorKey] = { loaiLoi: loaiLoi, NAYAX: 0, NEXGO: 0, P1: 0, P2: 0, OTHER: 0, TOTAL: 0 };
         }
@@ -3812,7 +4041,8 @@ function edcHandleFile(file) {
 
       _edcCurrentData = { tongLoi: tongLoi, tongTerminal: tongTerminal,
                           tongThietBi: tongThietBi, fileName: file.name,
-                          weekName: curWeek, errorMap: errorMap };
+                          weekName: curWeek, errorMap: errorMap,
+                          dailyMap: dailyMap, errGroupMap: errGroupMap };
 
       if (barEl)    barEl.style.width = '100%';
       if (msgEl)    msgEl.textContent = '✅ Đọc xong ' + tongLoi.toLocaleString() + ' bản ghi!';
@@ -3823,6 +4053,8 @@ function edcHandleFile(file) {
       if (placeholder) placeholder.style.display = 'none';
       _edcSetCardValues(tongLoi, tongTerminal, tongThietBi);
       _edcRenderBreakdown(errorMap);
+      _edcRenderDonut(errGroupMap);
+      _edcRenderDailyChart(dailyMap, curWeek);
       var fileInfoEl = document.getElementById('edcFileInfo');
       if (fileInfoEl) fileInfoEl.textContent = '📄 ' + file.name + '  |  Tuần: ' + curWeek +
                        '  |  ' + tongLoi.toLocaleString() + ' bản ghi';
@@ -4198,6 +4430,14 @@ function _edcReset() {
   _edcActiveTab   = 'ALL';
   _edcLastMap     = {};
   _edcLastPrevMap = {};
+  if (_edcDonutInstance) { _edcDonutInstance.destroy(); _edcDonutInstance = null; }
+  if (_edcDailyInstance) { _edcDailyInstance.destroy(); _edcDailyInstance = null; }
+  var db = document.getElementById('edcDailyBody');
+  if (db) db.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:16px">Chưa có dữ liệu</td></tr>';
+  var dl = document.getElementById('edcDonutLegend');
+  if (dl) dl.innerHTML = '';
+  var df = document.getElementById('edcDailyFoot');
+  if (df) df.style.display = 'none';
   // Ẩn cards
   var summaryEl = document.getElementById('edcSummaryBlock');
   if (summaryEl) summaryEl.style.display = 'none';
