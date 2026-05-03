@@ -4359,7 +4359,7 @@ function edcSaveSummary() {
 
   var done = 0, hasErr = false;
   function _checkDone() {
-    if (++done < 2) return;
+    if (++done < 3) return;  // chờ cả 3: summary + breakdown + daily
     btn.disabled = false;
     if (hasErr) {
       btn.textContent = '❌ Lỗi!';
@@ -4403,7 +4403,6 @@ function edcSaveSummary() {
     return;
   }
 
-  // Bước 1: Xóa data cũ trước (gửi mảng rỗng, append=0)
   // Bước 2: Append từng chunk tuần tự (append=1)
   apiGet({ action:'saveEdcBreakdown', weekName:curWeek, rows:'[]', append:'0' },
     function(clearRes) {
@@ -4420,7 +4419,17 @@ function edcSaveSummary() {
           if (idx + 1 < chunks.length) {
             sendChunk(idx + 1);
           } else {
-            _checkDone(); // Xong toàn bộ
+            // Lưu daily map sau khi breakdown xong
+            var dailyData = {
+              dailyMap:    _edcCurrentData.dailyMap    || {},
+              errGroupMap: _edcCurrentData.errGroupMap || {}
+            };
+            apiGet({
+              action:   'saveEdcDaily',
+              weekName: curWeek,
+              data:     JSON.stringify(dailyData)
+            }, function(r){ if (!r || r.error) hasErr = true; _checkDone(); },
+               function(){ hasErr = true; _checkDone(); });
           }
         }, function() { hasErr = true; _checkDone(); });
       })(0);
@@ -4434,6 +4443,23 @@ function _edcReset() {
   _edcActiveTab   = 'ALL';
   _edcLastMap     = {};
   _edcLastPrevMap = {};
+  // Reset style tất cả tabs về ALL active
+  document.querySelectorAll('.edc-tab').forEach(function(b) {
+    var d = b.dataset.dev;
+    if (d === 'ALL') {
+      b.style.background = '#1e3a5f'; b.style.color = '#fff';
+      b.style.border = '2px solid #1e3a5f'; b.style.opacity = '1';
+    } else {
+      var cfg = _EDC_TAB_CFG[d] || {};
+      b.style.background = 'transparent'; b.style.color = cfg.color || 'var(--text2)';
+      b.style.borderColor = cfg.border || 'var(--border)'; b.style.opacity = '0.45';
+    }
+  });
+  // Reset thead/tfoot cột về ALL (hiện lại tất cả)
+  var tbl = document.getElementById('edcBreakdownTable');
+  if (tbl) {
+    tbl.querySelectorAll('thead th, tfoot td').forEach(function(el){ el.style.display = ''; });
+  }
   if (_edcDonutInstance) { _edcDonutInstance.destroy(); _edcDonutInstance = null; }
   if (_edcDailyInstance) { _edcDailyInstance.destroy(); _edcDailyInstance = null; }
   var db = document.getElementById('edcDailyBody');
@@ -4515,6 +4541,14 @@ function _edcLoadExisting(weekName) {
       } else {
         _edcRenderBreakdown(curMap, {});
       }
+
+      // Load daily + donut
+      apiGet({ action: 'getEdcDaily', weekName: weekName }, function(dr) {
+        if (!dr || dr.error) return;
+        if (dr.errGroupMap) _edcRenderDonut(dr.errGroupMap);
+        if (dr.dailyMap && Object.keys(dr.dailyMap).length > 0) _edcRenderDailyChart(dr.dailyMap, weekName);
+      }, function(){});
+
     }, function(){});
   }, function() {
     var placeholder = document.getElementById('edcPlaceholder');
