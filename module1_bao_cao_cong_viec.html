@@ -4021,8 +4021,12 @@ function _edcRenderBreakdown(errorMap, prevMap) {
   var rows = keys.map(function(k) {
     var e    = errorMap[k];
     var prev = prevMap[k] || null;
-    ftNAYAX += e.NAYAX; ftNEXGO += e.NEXGO; ftP1 += e.P1; ftP2 += e.P2; ftTOTAL += e.TOTAL;
-    if (prev) ftPrevTotal += prev.TOTAL;
+    ftNAYAX += e.NAYAX; ftNEXGO += e.NEXGO; ftP1 += e.P1; ftP2 += e.P2;
+    // Cột TỔNG: khi chọn tab cụ thể → hiện giá trị của dòng máy đó, không phải tổng tất cả
+    var rowTotal = (dev === 'ALL') ? e.TOTAL : (e[dev] || 0);
+    var prevRowTotal = prev ? ((dev === 'ALL') ? prev.TOTAL : (prev[dev] || 0)) : null;
+    ftTOTAL += rowTotal;
+    if (prev) ftPrevTotal += (dev === 'ALL') ? prev.TOTAL : (prev[dev] || 0);
     var keyHtml   = '<span style="font-size:13px;font-weight:600;color:var(--primary)">' + _escHtml(k) + '</span>';
     var loaiHtml  = e.loaiLoi ? '<span style="font-size:12px;color:var(--text2)">' + _escHtml(e.loaiLoi) + '</span>' : '<span style="color:var(--text3)">—</span>';
     return '<tr>'
@@ -4032,8 +4036,8 @@ function _edcRenderBreakdown(errorMap, prevMap) {
       + _cell(e.NEXGO, '#2563EB')
       + _cell(e.P1,    '#7C3AED')
       + _cell(e.P2,    '#DB2777')
-      + '<td style="text-align:center;font-weight:700;font-size:13px">' + e.TOTAL.toLocaleString() + '</td>'
-      + _deltaHtml(e.TOTAL, prev ? prev.TOTAL : null)
+      + '<td style="text-align:center;font-weight:700;font-size:13px">' + rowTotal.toLocaleString() + '</td>'
+      + _deltaHtml(rowTotal, prevRowTotal)
       + '</tr>';
   });
 
