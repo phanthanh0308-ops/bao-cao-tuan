@@ -3887,31 +3887,65 @@ function _edcSetTab(btn) {
   var dev = btn.dataset.dev;
   _edcActiveTab = dev;
 
-  // Cập nhật style các tab
+  // Cập nhật style các tab: active = đậm, inactive = mờ
   document.querySelectorAll('.edc-tab').forEach(function(b) {
     var d   = b.dataset.dev;
     var cfg = _EDC_TAB_CFG[d] || _EDC_TAB_CFG.ALL;
-    if (d === dev) {
-      b.style.background = cfg.bg || '#1e3a5f';
-      b.style.color      = d === 'ALL' ? '#fff' : cfg.color;
-      b.style.borderColor = cfg.border || '#1e3a5f';
-      b.style.fontWeight  = '700';
+    var isActive = (d === dev);
+    if (d === 'ALL') {
+      b.style.background  = isActive ? '#1e3a5f' : 'transparent';
+      b.style.color       = isActive ? '#fff'    : 'var(--text3)';
+      b.style.border      = isActive ? '2px solid #1e3a5f' : '2px solid var(--border)';
+      b.style.opacity     = isActive ? '1' : '0.45';
     } else {
-      b.style.background  = d === 'ALL' ? 'transparent' : 'transparent';
-      b.style.color       = d === 'ALL' ? 'var(--text2)' : _EDC_TAB_CFG[d].color;
-      b.style.borderColor = d === 'ALL' ? 'var(--border)' : _EDC_TAB_CFG[d].border;
-      b.style.fontWeight  = '600';
+      b.style.background  = isActive ? cfg.bg    : 'transparent';
+      b.style.color       = isActive ? cfg.color : 'var(--text3)';
+      b.style.borderColor = isActive ? cfg.border : 'var(--border)';
+      b.style.opacity     = isActive ? '1' : '0.45';
     }
   });
-  // Đặt lại tab ALL
-  var allBtn = document.querySelector('.edc-tab[data-dev="ALL"]');
-  if (allBtn) {
-    if (dev === 'ALL') {
-      allBtn.style.background = '#1e3a5f'; allBtn.style.color = '#fff';
-    } else {
-      allBtn.style.background = 'transparent'; allBtn.style.color = 'var(--text2)';
-      allBtn.style.border = '2px solid var(--border)';
+
+  // Ẩn/hiện cột theo tab — dùng colgroup style
+  // Thứ tự cột: 0=MãLỗi 1=LoạiLỗi 2=NAYAX 3=NEXGO 4=P1 5=P2 6=TỔNG 7=±%
+  var colVisibility = {
+    ALL:   [true,  true,  true,  true,  true,  true,  true,  true],
+    NAYAX: [true,  true,  true,  false, false, false, true,  true],
+    NEXGO: [true,  true,  false, true,  false, false, true,  true],
+    P1:    [true,  true,  false, false, true,  false, true,  true],
+    P2:    [true,  true,  false, false, false, true,  true,  true],
+  };
+  var vis = colVisibility[dev] || colVisibility.ALL;
+
+  var table = document.getElementById('edcBreakdownTable');
+  if (table) {
+    // Ẩn/hiện qua thead th và tfoot td
+    var ths = table.querySelectorAll('thead tr th');
+    var tds = table.querySelectorAll('tfoot tr td');
+    // thead: th index 0-7
+    ths.forEach(function(th, i) {
+      th.style.display = vis[i] ? '' : 'none';
+    });
+    // tfoot: có colspan=2 ở đầu (MãLỗi + LoạiLỗi) → col 0+1 → td[0]
+    // Cấu trúc: [TỔNG CỘNG(colspan2)][NAYAX][NEXGO][P1][P2][TỔNG][±%]
+    // td index:       0                  1       2    3    4    5    6
+    var tdMap = [null, 1, 2, 3, 4, 5, 6]; // vis index → tfoot td index (vis[0+1] → td[0])
+    // Xử lý tfoot td riêng
+    var ftCols = table.querySelectorAll('tfoot tr td');
+    // ftCols: [0]=TỔNG CỘNG, [1]=NAYAX, [2]=NEXGO, [3]=P1, [4]=P2, [5]=TỔNG, [6]=±%
+    if (ftCols.length >= 7) {
+      ftCols[1].style.display = vis[2] ? '' : 'none'; // NAYAX
+      ftCols[2].style.display = vis[3] ? '' : 'none'; // NEXGO
+      ftCols[3].style.display = vis[4] ? '' : 'none'; // P1
+      ftCols[4].style.display = vis[5] ? '' : 'none'; // P2
     }
+    // tbody: ẩn td theo index trong mỗi row
+    var bodyRows = table.querySelectorAll('tbody tr');
+    bodyRows.forEach(function(tr) {
+      var cells = tr.querySelectorAll('td');
+      cells.forEach(function(td, i) {
+        td.style.display = vis[i] ? '' : 'none';
+      });
+    });
   }
 
   _edcRenderBreakdown(_edcLastMap, _edcLastPrevMap);
@@ -4004,6 +4038,20 @@ function _edcRenderBreakdown(errorMap, prevMap) {
   });
 
   tbody.innerHTML = rows.join('');
+
+  // Áp lại column visibility cho tbody vừa render
+  var _colVis = {
+    ALL:[true,true,true,true,true,true,true,true],
+    NAYAX:[true,true,true,false,false,false,true,true],
+    NEXGO:[true,true,false,true,false,false,true,true],
+    P1:[true,true,false,false,true,false,true,true],
+    P2:[true,true,false,false,false,true,true,true],
+  };
+  var _vis = _colVis[dev] || _colVis.ALL;
+  tbody.querySelectorAll('tr').forEach(function(tr) {
+    var cs = tr.querySelectorAll('td');
+    cs.forEach(function(td, i) { td.style.display = _vis[i] ? '' : 'none'; });
+  });
 
   if (tfoot) {
     tfoot.style.display = 'table-footer-group';
