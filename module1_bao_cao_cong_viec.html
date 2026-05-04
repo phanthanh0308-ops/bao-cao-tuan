@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Báo cáo công việc - Thành</title>
+<!-- Init dark mode TRƯỚC khi render CSS để tránh flash -->
+<script>
+(function(){
+  var t = localStorage.getItem('theme');
+  // Mặc định dark nếu chưa chọn bao giờ
+  if (t !== 'light') document.documentElement.classList.add('dark-init');
+})();
+</script>
 <script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -40,10 +48,11 @@
   --th-bg:#2D1B69;
 }
 /* ── DARK MODE ── */
-body.dark select{background:var(--card);color:var(--text);border-color:var(--border)}
-body.dark select option{background:#1E1C35;color:#E8E6FF}
-body.dark input,body.dark textarea{background:transparent;color:var(--text)}
-body.dark .cin:focus{background:var(--white)}
+html.dark-init body select,body.dark select{background:var(--card);color:var(--text);border-color:var(--border)}
+html.dark-init body select option,body.dark select option{background:#1E1C35;color:#E8E6FF}
+html.dark-init body input,html.dark-init body textarea,body.dark input,body.dark textarea{background:transparent;color:var(--text)}
+html.dark-init body .cin:focus,body.dark .cin:focus{background:var(--white)}
+html.dark-init body,body.dark{
   --bg:#0F0E1A;
   --white:#1A1830;
   --card:#1E1C35;
@@ -1248,20 +1257,20 @@ var DOWS = ['CN','T2','T3','T4','T5','T6','T7'];
 // ── DARK / LIGHT MODE ──
 function toggleTheme() {
   var isDark = document.body.classList.toggle('dark');
+  if (isDark) { document.documentElement.classList.add('dark-init'); }
+  else { document.documentElement.classList.remove('dark-init'); }
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  document.getElementById('btnTheme').textContent = isDark ? '☀️' : '🌙';
+  var btn = document.getElementById('btnTheme');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
 }
-// Init theme — mặc định dark
-(function(){
-  var saved = localStorage.getItem('theme');
-  var dark  = saved ? saved === 'dark' : true;
-  if (dark) document.body.classList.add('dark');
-  // Cập nhật icon sau khi DOM ready
-  window.addEventListener('DOMContentLoaded', function(){
-    var b = document.getElementById('btnTheme');
-    if (b) b.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-  });
-})();
+// Sync body.dark với html.dark-init (đã set trong <head>)
+window.addEventListener('DOMContentLoaded', function() {
+  var isDark = document.documentElement.classList.contains('dark-init');
+  if (isDark) document.body.classList.add('dark');
+  else document.body.classList.remove('dark');
+  var btn = document.getElementById('btnTheme');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+});
 
 var apiUrl = '';
 var spreadsheetId = ''; // ID cua Google Sheet (lay tu URL)
