@@ -40,7 +40,10 @@
   --th-bg:#2D1B69;
 }
 /* ── DARK MODE ── */
-body.dark{
+body.dark select{background:var(--card);color:var(--text);border-color:var(--border)}
+body.dark select option{background:#1E1C35;color:#E8E6FF}
+body.dark input,body.dark textarea{background:transparent;color:var(--text)}
+body.dark .cin:focus{background:var(--white)}
   --bg:#0F0E1A;
   --white:#1A1830;
   --card:#1E1C35;
@@ -155,19 +158,21 @@ th:last-child{border-right:none}
 tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:#D0D5FF;cursor:default;transition:background .12s}
+tbody tr:hover td,tbody tr:hover td *{color:#1E1B4B !important}
+tbody tr:hover .cin{background:transparent}
 td{padding:8px 10px;vertical-align:top;font-size:13px;color:var(--text);border-right:1px solid var(--border)}
 td:last-child{border-right:none}
 .td-num{text-align:center;color:var(--text3);font-size:11px;font-weight:700;width:36px;vertical-align:middle}
 .cin{width:100%;border:none;background:transparent;font-family:var(--font);font-size:13px;color:var(--text);padding:3px 4px;border-radius:6px;resize:none;line-height:1.6;min-height:28px;overflow:hidden;word-break:break-word;white-space:pre-wrap;box-sizing:border-box;display:block}
 .cin:focus{outline:2px solid var(--primary);background:var(--white)}
-select.cin{cursor:pointer;overflow:hidden;white-space:normal;height:auto;text-align:center;text-align-last:center}
+select.cin{cursor:pointer;overflow:hidden;white-space:normal;height:auto;text-align:center;text-align-last:center;background:var(--card,var(--white));color:var(--text)}
+select.cin option{background:var(--card,#fff);color:#1E1B4B}
 input.cin{text-align:center}
 td{padding:6px 8px;vertical-align:middle;font-size:13px;color:var(--text);border-right:1px solid var(--border);height:auto}
 td:last-child{border-right:none}
 .td-stt{text-align:center;color:var(--text3);font-size:11px;font-weight:700;width:32px}
 .empty-td{text-align:center;padding:48px;color:var(--text3)}
 .empty-ico{font-size:36px;display:block;margin-bottom:10px;opacity:.3}
-
 /* PRI BADGE */
 .pri-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
 .pri-p1{background:#FEE2E2;color:#DC2626}
@@ -301,6 +306,7 @@ select.sta-sel{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600
 .rpt-tbl th:last-child{border-right:none}
 .rpt-tbl tbody tr{border-bottom:1px solid var(--border)}
 .rpt-tbl tbody tr:hover{background:#D0D5FF;cursor:default;transition:background .12s}
+.rpt-tbl tbody tr:hover td,.rpt-tbl tbody tr:hover td *{color:#1E1B4B !important}
 .rpt-tbl td{padding:9px 10px;vertical-align:middle;font-size:13px;border-right:1px solid var(--border)}
 .rpt-tbl td:last-child{border-right:none}
 /* TREND */
