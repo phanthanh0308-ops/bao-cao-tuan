@@ -1247,7 +1247,7 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
 <div id="createTaskModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:16px">
   <div style="background:var(--card,var(--white));border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card,var(--white));z-index:1;border-radius:16px 16px 0 0">
-      <div style="font-size:15px;font-weight:700;color:var(--text)">✨ Tạo task mới</div>
+      <div class="modal-title-txt" style="font-size:15px;font-weight:700;color:var(--text)">✨ Tạo task mới</div>
       <button onclick="closeCreateTask()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text2);line-height:1;padding:4px 8px">×</button>
     </div>
     <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
@@ -1289,13 +1289,17 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
         </div>
       </div>
       <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Chi tiết</label>
+        <textarea id="ctCd" class="cin" rows="3" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical" placeholder="Chi tiết thêm về task (tuỳ chọn)"></textarea>
+      </div>
+      <div>
         <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Ghi chú</label>
         <textarea id="ctGc" class="cin" rows="2" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical" placeholder="Ghi chú thêm (tuỳ chọn)"></textarea>
       </div>
     </div>
     <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
       <button onclick="closeCreateTask()" style="background:var(--primary-light);color:var(--primary);border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Huỷ</button>
-      <button onclick="submitCreateTask()" style="background:var(--primary);color:#fff;border:none;padding:9px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✨ Tạo task</button>
+      <button id="ctSubmitBtn" onclick="submitCreateTask()" style="background:var(--primary);color:#fff;border:none;padding:9px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✨ Tạo task</button>
     </div>
   </div>
 </div>
@@ -1945,28 +1949,30 @@ function openTaskDetail(i) {
   var STA_MAP = {};
   for (var s = 0; s < STA.length; s++) STA_MAP[STA[s]] = STA_VI[s];
 
-  var fields = [
-    { label: 'Phân hệ',             val: r.ph  || '—' },
-    { label: 'Tính năng / Màn hình', val: r.tn  || '—' },
-    { label: 'Mô tả',               val: r.mt  || '—', pre: true },
-    { label: 'Độ ưu tiên',          val: r.pri || '—', badge: true },
-    { label: 'TG thực hiện (ngày)', val: r.tg  || '—' },
-    { label: 'Ngày hoàn thành',     val: r.ngay|| '—' },
-    { label: 'Trạng thái',          val: STA_MAP[r.ts] || r.ts || '—' },
-    { label: 'Ghi chú',             val: r.gc  || '—', pre: true },
-  ];
+  function _field(label, val, fullWidth, pre) {
+    var valHtml = (pre && val && val !== '—')
+      ? '<div style="white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.6;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--border);max-height:160px;overflow-y:auto">' + escH(String(val)) + '</div>'
+      : '<div style="font-size:13px;color:var(--text);padding:2px 0">' + escH(String(val)) + '</div>';
+    return '<div style="' + (fullWidth ? 'grid-column:1/-1;' : '') + '">'
+      + '<div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.8px;margin-bottom:5px;text-transform:uppercase">' + label + '</div>'
+      + valHtml + '</div>';
+  }
 
-  var html = fields.map(function(f) {
-    var val = f.pre
-      ? '<div style="white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.6;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">' + escH(String(f.val)) + '</div>'
-      : f.badge
-        ? '<span style="background:var(--primary);color:#fff;padding:3px 12px;border-radius:20px;font-size:13px;font-weight:700">' + escH(String(f.val)) + '</span>'
-        : '<div style="font-size:13px;color:var(--text)">' + escH(String(f.val)) + '</div>';
-    return '<div>'
-      + '<div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase">' + f.label + '</div>'
-      + val
-      + '</div>';
-  }).join('');
+  var priColor = { P1:'#EF4444', P2:'#F97316', P3:'#10B981' };
+  var priHtml = '<div style="grid-column:1/-1"><div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.8px;margin-bottom:5px;text-transform:uppercase">ĐỘ ƯU TIÊN</div>'
+    + '<span style="background:' + (priColor[r.pri]||'var(--primary)') + ';color:#fff;padding:3px 14px;border-radius:20px;font-size:13px;font-weight:700">' + escH(r.pri||'—') + '</span></div>';
+
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+    + _field('PHÂN HỆ',              r.ph  || '—')
+    + _field('TÍNH NĂNG / MÀN HÌNH', r.tn  || '—')
+    + _field('MÔ TẢ',                r.mt  || '—', true, true)
+    + _field('CHI TIẾT',             r.cd  || '—', true, true)
+    + priHtml
+    + _field('TG THỰC HIỆN (NGÀY)',  r.tg  || '—')
+    + _field('NGÀY HOÀN THÀNH',      r.ngay|| '—')
+    + _field('TRẠNG THÁI',           STA_MAP[r.ts] || r.ts || '—')
+    + _field('GHI CHÚ',             r.gc  || '—', true)
+    + '</div>';
 
   document.getElementById('tdBody').innerHTML = html;
   var modal = document.getElementById('taskDetailModal');
@@ -1988,16 +1994,71 @@ function delRowFromDetail() {
 }
 
 function switchToEditMode() {
+  if (_tdIdx < 0) return;
   closeTaskDetail();
-  // Scroll đến dòng trong bảng
-  setTimeout(function() {
-    var tb = document.getElementById('tBody');
-    if (tb && tb.children[_tdIdx]) {
-      tb.children[_tdIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      tb.children[_tdIdx].style.background = 'rgba(91,71,224,0.18)';
-      setTimeout(function(){ if(tb.children[_tdIdx]) tb.children[_tdIdx].style.background = ''; }, 1500);
-    }
-  }, 100);
+  openEditTask(_tdIdx);
+}
+
+function openEditTask(i) {
+  _tdIdx = i;
+  var r = rows[i];
+  // Reuse create modal nhưng pre-fill data
+  document.getElementById('ctPh').value  = r.ph  || '';
+  document.getElementById('ctTn').value  = r.tn  || '';
+  document.getElementById('ctMt').value  = r.mt  || '';
+  document.getElementById('ctPri').value = r.pri || 'P2';
+  document.getElementById('ctTg').value  = r.tg  || '';
+  document.getElementById('ctGc').value  = r.gc  || '';
+
+  // Ngày
+  var ngayInput = '';
+  if (r.ngay && r.ngay.indexOf('/') > 0) {
+    var dp = r.ngay.split('/');
+    ngayInput = dp[2] + '-' + dp[1] + '-' + dp[0];
+  }
+  document.getElementById('ctNgay').value = ngayInput;
+
+  // Trạng thái
+  var sel = document.getElementById('ctTs');
+  sel.innerHTML = STA.map(function(s, idx) {
+    return '<option value="' + s + '">' + STA_VI[idx] + '</option>';
+  }).join('');
+  sel.value = r.ts || 'Chua co timeline';
+
+  // Chi tiết
+  if (document.getElementById('ctCd')) document.getElementById('ctCd').value = r.cd || '';
+
+  // Đổi title và nút submit sang Edit mode
+  document.querySelector('#createTaskModal .modal-title-txt').textContent = '✏️ Chỉnh sửa Task #' + (i + 1);
+  document.getElementById('ctSubmitBtn').textContent = '💾 Lưu thay đổi';
+  document.getElementById('ctSubmitBtn').onclick = function() { submitEditTask(); };
+
+  document.getElementById('createTaskModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(function(){ document.getElementById('ctMt').focus(); }, 100);
+}
+
+function submitEditTask() {
+  var mt = document.getElementById('ctMt').value.trim();
+  if (!mt) { document.getElementById('ctMt').focus(); showToast('Vui lòng nhập Mô tả!', 'err'); return; }
+  var ngayInput = document.getElementById('ctNgay').value;
+  var ngayFmt = '';
+  if (ngayInput) { var dp = ngayInput.split('-'); ngayFmt = dp[2]+'/'+dp[1]+'/'+dp[0]; }
+
+  rows[_tdIdx] = {
+    ph:  document.getElementById('ctPh').value.trim(),
+    tn:  document.getElementById('ctTn').value.trim(),
+    mt:  mt,
+    pri: document.getElementById('ctPri').value,
+    tg:  document.getElementById('ctTg').value.trim(),
+    ngay:ngayFmt,
+    ts:  document.getElementById('ctTs').value,
+    gc:  document.getElementById('ctGc').value.trim(),
+    cd:  document.getElementById('ctCd') ? document.getElementById('ctCd').value.trim() : (rows[_tdIdx].cd||'')
+  };
+  mark(); renderTable();
+  closeCreateTask();
+  showToast('Đã cập nhật task #' + (_tdIdx + 1) + '!', 'ok');
 }
 
 // ── MODAL TẠO TASK ──
@@ -2018,6 +2079,12 @@ function openCreateTask() {
     return '<option value="' + s + '">' + STA_VI[idx] + '</option>';
   }).join('');
   sel.value = 'Chua co timeline';
+  // Reset về create mode
+  var titleEl = document.querySelector('#createTaskModal .modal-title-txt');
+  if (titleEl) titleEl.textContent = '✨ Tạo task mới';
+  var submitBtn = document.getElementById('ctSubmitBtn');
+  if (submitBtn) { submitBtn.textContent = '✨ Tạo task'; submitBtn.onclick = function(){ submitCreateTask(); }; }
+  if (document.getElementById('ctCd')) document.getElementById('ctCd').value = '';
   // Show modal
   document.getElementById('createTaskModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -2043,7 +2110,8 @@ function submitCreateTask() {
     tg:   document.getElementById('ctTg').value.trim(),
     ngay: ngayFmt,
     ts:   document.getElementById('ctTs').value,
-    gc:   document.getElementById('ctGc').value.trim()
+    gc:   document.getElementById('ctGc').value.trim(),
+    cd:   document.getElementById('ctCd') ? document.getElementById('ctCd').value.trim() : ''
   });
   mark(); renderTable();
   closeCreateTask();
