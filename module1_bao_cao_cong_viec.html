@@ -600,13 +600,13 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
           <div class="table-week" id="tblLbl">Chọn hoặc tạo tuần để bắt đầu</div>
         </div>
         <div class="table-actions" id="tblActionsBar">
-          <button class="btn btn-sm" id="btnAdd" onclick="addRow()" disabled>+ Thêm dòng</button>
+          <button class="btn btn-sm" id="btnAdd" onclick="openCreateTask()" disabled>＋ Tạo task</button>
           <button class="btn btn-primary btn-sm" id="btnSave" onclick="saveData()" disabled>☁ Lưu lên Sheets</button>
         </div>
       </div>
       <div class="tbl-scroll" style="max-height:calc(100vh - 320px);overflow-y:auto;overflow-x:auto" id="taskTableScroll">
         <table>
-          <thead style="position:sticky;top:0;z-index:2;background:#fff"><tr>
+          <thead style="position:sticky;top:0;z-index:2;background:var(--th-bg)"><tr>
             <th style="width:32px">#</th>
             <th style="width:100px;text-align:left">Phân hệ</th>
             <th style="width:140px;text-align:left">Tính năng / Màn hình</th>
@@ -615,8 +615,7 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
             <th style="width:80px">TG thực hiện</th>
             <th style="width:110px">Hoàn thành</th>
             <th style="width:160px">Trạng thái</th>
-            <th style="width:22%;text-align:left">Ghi chú</th>
-            <th style="width:32px"></th>
+            <th style="width:110px;text-align:center">Hành động</th>
           </tr></thead>
           <tbody id="tBody"></tbody>
         </table>
@@ -1221,6 +1220,82 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
     <div class="modal-btns">
       <button class="btn btn-sm" onclick="closeLoginModal()">Đóng</button>
       <button class="btn btn-sm btn-primary" id="btnDoLogin" onclick="torogDoLogin()">🔐 Đăng nhập</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CHI TIẾT TASK ══ -->
+<div id="taskDetailModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--card,var(--white));border-radius:16px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card,var(--white));z-index:1;border-radius:16px 16px 0 0">
+      <div style="font-size:15px;font-weight:700;color:var(--text)">📋 Chi tiết Task #<span id="tdRowNum"></span></div>
+      <button onclick="closeTaskDetail()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text2);line-height:1;padding:4px 8px">×</button>
+    </div>
+    <!-- Body -->
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px" id="tdBody">
+    </div>
+    <!-- Footer -->
+    <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <button id="tdEditBtn" onclick="switchToEditMode()" style="background:var(--primary);color:#fff;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✏️ Chỉnh sửa</button>
+      <button id="tdDeleteBtn" onclick="delRowFromDetail()" style="background:#EF4444;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🗑 Xóa task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL TẠO TASK ══ -->
+<div id="createTaskModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--card,var(--white));border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card,var(--white));z-index:1;border-radius:16px 16px 0 0">
+      <div style="font-size:15px;font-weight:700;color:var(--text)">✨ Tạo task mới</div>
+      <button onclick="closeCreateTask()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text2);line-height:1;padding:4px 8px">×</button>
+    </div>
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Phân hệ</label>
+        <input id="ctPh" class="cin" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text)" placeholder="VD: App EDC, EDC TPBank...">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Tính năng / Màn hình</label>
+        <input id="ctTn" class="cin" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text)" placeholder="Tính năng hoặc màn hình liên quan">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Mô tả <span style="color:#EF4444">*</span></label>
+        <textarea id="ctMt" class="cin" rows="4" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical" placeholder="Mô tả chi tiết task..."></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Độ ưu tiên</label>
+          <select id="ctPri" class="cin" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--card,var(--white));color:var(--text)">
+            <option value="P1">P1</option>
+            <option value="P2" selected>P2</option>
+            <option value="P3">P3</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">TG thực hiện (ngày)</label>
+          <input id="ctTg" class="cin" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text)" placeholder="0.5" type="text">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Ngày hoàn thành</label>
+          <input id="ctNgay" type="date" class="cin" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text)">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Trạng thái</label>
+          <select id="ctTs" class="cin" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--card,var(--white));color:var(--text)">
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Ghi chú</label>
+        <textarea id="ctGc" class="cin" rows="2" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical" placeholder="Ghi chú thêm (tuỳ chọn)"></textarea>
+      </div>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
+      <button onclick="closeCreateTask()" style="background:var(--primary-light);color:var(--primary);border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Huỷ</button>
+      <button onclick="submitCreateTask()" style="background:var(--primary);color:#fff;border:none;padding:9px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✨ Tạo task</button>
     </div>
   </div>
 </div>
@@ -1847,8 +1922,10 @@ function rowHTML(r, i) {
     +'<td style="text-align:center"><input type="text" class="cin ctr" value="'+escH(r.tg||'')+'" placeholder="0.5" onchange="setF('+i+',\'tg\',this.value);mark()"></td>'
     +'<td style="text-align:center"><input type="date" class="cin ctr" value="'+ngayVal+'" onchange="setNgay('+i+',this.value);mark()"></td>'
     +'<td style="text-align:center"><select class="cin" onchange="setF('+i+',\'ts\',this.value);mark();updateStats()">'+tsOpts+'</select></td>'
-    +'<td style="text-align:left"><textarea class="cin" rows="1" oninput="autoH(this);setF('+i+',\'gc\',this.value);mark()">'+escH(r.gc||'')+'</textarea></td>'
-    +'<td style="text-align:center"><button class="btn btn-xs btn-danger" onclick="delRow('+i+')">✕</button></td>'
+    +'<td style="text-align:center;white-space:nowrap">'
+    + '<button onclick="openTaskDetail('+i+')" title="Chi tiết" style="background:rgba(91,71,224,0.1);color:var(--primary);border:1px solid var(--primary);padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px">🔍 Chi tiết</button>'
+    + '<button onclick="delRow('+i+')" title="Xóa" style="background:rgba(239,68,68,0.1);color:#EF4444;border:1px solid #EF4444;padding:5px 8px;border-radius:6px;font-size:12px;cursor:pointer">🗑</button>'
+    +'</td>'
     +'</tr>';
 }
 
@@ -1856,19 +1933,135 @@ function setNgay(i, val) { if(!val){rows[i].ngay='';return;} var dp=val.split('-
 function setF(i, f, v) { rows[i][f] = v; }
 function mark() { dirty=true; setSave('<span class="dot"></span>Có thay đổi chưa lưu lên Sheets'); }
 
-function addRow() {
-  if (!isEditor) { showToast('Bạn không có quyền chỉnh sửa!','err'); return; }
-  if (!curWeek) { showToast('Chọn tuần trước!','err'); return; }
-  rows.push({ph:'',tn:'',mt:'',pri:'P2',tg:'',ngay:'',ts:'Chua co timeline',gc:''});
+
+// ── MODAL CHI TIẾT TASK ──
+var _tdIdx = -1;
+
+function openTaskDetail(i) {
+  _tdIdx = i;
+  var r = rows[i];
+  document.getElementById('tdRowNum').textContent = i + 1;
+
+  var STA_MAP = {};
+  for (var s = 0; s < STA.length; s++) STA_MAP[STA[s]] = STA_VI[s];
+
+  var fields = [
+    { label: 'Phân hệ',             val: r.ph  || '—' },
+    { label: 'Tính năng / Màn hình', val: r.tn  || '—' },
+    { label: 'Mô tả',               val: r.mt  || '—', pre: true },
+    { label: 'Độ ưu tiên',          val: r.pri || '—', badge: true },
+    { label: 'TG thực hiện (ngày)', val: r.tg  || '—' },
+    { label: 'Ngày hoàn thành',     val: r.ngay|| '—' },
+    { label: 'Trạng thái',          val: STA_MAP[r.ts] || r.ts || '—' },
+    { label: 'Ghi chú',             val: r.gc  || '—', pre: true },
+  ];
+
+  var html = fields.map(function(f) {
+    var val = f.pre
+      ? '<div style="white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.6;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">' + escH(String(f.val)) + '</div>'
+      : f.badge
+        ? '<span style="background:var(--primary);color:#fff;padding:3px 12px;border-radius:20px;font-size:13px;font-weight:700">' + escH(String(f.val)) + '</span>'
+        : '<div style="font-size:13px;color:var(--text)">' + escH(String(f.val)) + '</div>';
+    return '<div>'
+      + '<div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase">' + f.label + '</div>'
+      + val
+      + '</div>';
+  }).join('');
+
+  document.getElementById('tdBody').innerHTML = html;
+  var modal = document.getElementById('taskDetailModal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTaskDetail() {
+  document.getElementById('taskDetailModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function delRowFromDetail() {
+  if (_tdIdx < 0) return;
+  if (!confirm('Xóa task #' + (_tdIdx + 1) + '?')) return;
+  rows.splice(_tdIdx, 1);
   mark(); renderTable();
+  closeTaskDetail();
+}
+
+function switchToEditMode() {
+  closeTaskDetail();
+  // Scroll đến dòng trong bảng
+  setTimeout(function() {
+    var tb = document.getElementById('tBody');
+    if (tb && tb.children[_tdIdx]) {
+      tb.children[_tdIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      tb.children[_tdIdx].style.background = 'rgba(91,71,224,0.18)';
+      setTimeout(function(){ if(tb.children[_tdIdx]) tb.children[_tdIdx].style.background = ''; }, 1500);
+    }
+  }, 100);
+}
+
+// ── MODAL TẠO TASK ──
+function openCreateTask() {
+  if (!isEditor) { showToast('Bạn không có quyền chỉnh sửa!', 'err'); return; }
+  if (!curWeek) { showToast('Chọn tuần trước!', 'err'); return; }
+  // Clear form
+  document.getElementById('ctPh').value = '';
+  document.getElementById('ctTn').value = '';
+  document.getElementById('ctMt').value = '';
+  document.getElementById('ctPri').value = 'P2';
+  document.getElementById('ctTg').value = '';
+  document.getElementById('ctNgay').value = '';
+  document.getElementById('ctGc').value = '';
+  // Populate select Trạng thái
+  var sel = document.getElementById('ctTs');
+  sel.innerHTML = STA.map(function(s, idx) {
+    return '<option value="' + s + '">' + STA_VI[idx] + '</option>';
+  }).join('');
+  sel.value = 'Chua co timeline';
+  // Show modal
+  document.getElementById('createTaskModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(function(){ document.getElementById('ctMt').focus(); }, 100);
+}
+
+function closeCreateTask() {
+  document.getElementById('createTaskModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function submitCreateTask() {
+  var mt = document.getElementById('ctMt').value.trim();
+  if (!mt) { document.getElementById('ctMt').focus(); showToast('Vui lòng nhập Mô tả!', 'err'); return; }
+  var ngayInput = document.getElementById('ctNgay').value;
+  var ngayFmt = '';
+  if (ngayInput) { var dp = ngayInput.split('-'); ngayFmt = dp[2]+'/'+dp[1]+'/'+dp[0]; }
+  rows.push({
+    ph:   document.getElementById('ctPh').value.trim(),
+    tn:   document.getElementById('ctTn').value.trim(),
+    mt:   mt,
+    pri:  document.getElementById('ctPri').value,
+    tg:   document.getElementById('ctTg').value.trim(),
+    ngay: ngayFmt,
+    ts:   document.getElementById('ctTs').value,
+    gc:   document.getElementById('ctGc').value.trim()
+  });
+  mark(); renderTable();
+  closeCreateTask();
+  showToast('Đã tạo task mới!', 'ok');
   setTimeout(function(){
     var container = document.getElementById('taskTableScroll');
-    if(container) container.scrollTop = container.scrollHeight;
-    else {
-      var tb=document.getElementById('tBody');
-      if(tb.lastElementChild) tb.lastElementChild.scrollIntoView({behavior:'smooth',block:'nearest'});
-    }
-  },60);
+    if (container) container.scrollTop = container.scrollHeight;
+  }, 60);
+}
+
+// Đóng modal khi click backdrop
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'taskDetailModal') closeTaskDetail();
+  if (e.target.id === 'createTaskModal') closeCreateTask();
+});
+
+function addRow() {
+  openCreateTask();
 }
 
 function delRow(i) {
@@ -2748,14 +2941,38 @@ function parseTicketData(rows) {
   var DONE_STA = {'Đã đóng':1,'Hoàn thành':1,'Closed':1,'Done':1};
   var groups = {}; // quyTrinh -> {total, done, ton, totalSecs, countSecs}
 
+  // Tự tìm index cột theo tên header (row 3)
+  var headerRow3 = rows[3] || [];
+  function _tkFindCol(keywords) {
+    for (var ki = 0; ki < keywords.length; ki++) {
+      var kw = keywords[ki].toLowerCase();
+      for (var ci = 0; ci < headerRow3.length; ci++) {
+        if (String(headerRow3[ci] || '').toLowerCase().indexOf(kw) >= 0) return ci;
+      }
+    }
+    return -1;
+  }
+  var tkCOL = {
+    quyTrinh:  _tkFindCol(['quy trình ticket','quy trinh']),
+    trangThai: _tkFindCol(['trạng thái','trang thai']),
+    tgxl:      _tkFindCol(['thời gian xử lý','tg xử lý']),
+    ngayDong:  _tkFindCol(['ngày đóng','ngay dong'])
+  };
+  // Fallback về index cứng nếu không tìm thấy
+  if (tkCOL.quyTrinh  < 0) tkCOL.quyTrinh  = 28;
+  if (tkCOL.trangThai < 0) tkCOL.trangThai = 2;
+  if (tkCOL.tgxl      < 0) tkCOL.tgxl      = 16;
+  if (tkCOL.ngayDong  < 0) tkCOL.ngayDong  = 31;
+  console.log('[Ticket HTML] Column map:', JSON.stringify(tkCOL));
+
   for (var i = 4; i < rows.length; i++) {
     var r = rows[i];
     if (!r || r[0] == null) continue;
 
-    var quyTrinh = (r[27] || '').toString().trim() || 'Khác';
-    var trangThai = (r[2]  || '').toString().trim();
-    var tgxl      = (r[16] || '').toString().trim();
-    var ngayDong  = r[31];
+    var quyTrinh  = (r[tkCOL.quyTrinh]  || '').toString().trim() || 'Khác';
+    var trangThai = (r[tkCOL.trangThai] || '').toString().trim();
+    var tgxl      = (r[tkCOL.tgxl]      || '').toString().trim();
+    var ngayDong  = r[tkCOL.ngayDong];
 
     if (!groups[quyTrinh]) {
       groups[quyTrinh] = {total:0, done:0, ton:0, totalSecs:0, countSecs:0};
@@ -2784,13 +3001,16 @@ function parseTicketData(rows) {
 }
 
 function parseTimeStr(str) {
-  if (!str || str === 'null') return 0;
-  var secs = 0;
-  var m;
+  if (str == null || str === '' || str === 'null') return 0;
+  if (typeof str === 'number') return Math.round(str);
+  str = String(str).trim();
+  if (!str || str === '—') return 0;
+  var secs = 0, m;
   m = str.match(/(\d+)\s*ngày/);  if (m) secs += parseInt(m[1]) * 86400;
   m = str.match(/(\d+)\s*giờ/);   if (m) secs += parseInt(m[1]) * 3600;
   m = str.match(/(\d+)\s*phút/);  if (m) secs += parseInt(m[1]) * 60;
   m = str.match(/(\d+)\s*giây/);  if (m) secs += parseInt(m[1]);
+  if (secs === 0 && /^\d+$/.test(str)) secs = parseInt(str);
   return secs;
 }
 
