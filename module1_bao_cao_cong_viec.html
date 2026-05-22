@@ -1261,7 +1261,7 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Mô tả <span style="color:#EF4444">*</span></label>
-        <textarea id="ctMt" class="cin" rows="4" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical" placeholder="Mô tả chi tiết task..."></textarea>
+        <textarea id="ctMt" class="cin" rows="8" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical;min-height:140px" placeholder="Mô tả chi tiết task..."></textarea>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div>
@@ -1290,11 +1290,19 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Chi tiết</label>
-        <textarea id="ctCd" class="cin" rows="3" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical" placeholder="Chi tiết thêm về task (tuỳ chọn)"></textarea>
+        <textarea id="ctCd" class="cin" rows="7" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical;min-height:120px" placeholder="Chi tiết thêm về task (tuỳ chọn)"></textarea>
       </div>
+      <!-- Tiến độ (thay Ghi chú) -->
       <div>
-        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:block">Ghi chú</label>
-        <textarea id="ctGc" class="cin" rows="2" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical" placeholder="Ghi chú thêm (tuỳ chọn)"></textarea>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+          <span>📈 Tiến độ</span>
+          <span style="font-size:11px;font-weight:400;color:var(--text3)">Cập nhật sẽ ghi kèm ngày giờ</span>
+        </label>
+        <!-- Hiển thị log tiến độ cũ -->
+        <div id="ctGcLog" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;max-height:140px;overflow-y:auto;font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-wrap"></div>
+        <!-- Ô nhập cập nhật mới -->
+        <textarea id="ctGc" class="cin" rows="3" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;background:var(--card,var(--white));color:var(--text);resize:vertical" placeholder="Nhập cập nhật tiến độ mới..."></textarea>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">↑ Nội dung sẽ được thêm vào log kèm ngày giờ hiện tại</div>
       </div>
     </div>
     <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
@@ -1949,6 +1957,29 @@ function openTaskDetail(i) {
   var STA_MAP = {};
   for (var s = 0; s < STA.length; s++) STA_MAP[STA[s]] = STA_VI[s];
 
+  function _tdFieldTienDo(logText) {
+    var entries = (logText || '').trim().split('\n').filter(function(l){ return l.trim(); });
+    var inner;
+    if (!entries.length) {
+      inner = '<div style="font-size:13px;color:var(--text3);font-style:italic">Chưa có cập nhật tiến độ</div>';
+    } else {
+      inner = entries.map(function(e) {
+        var m = e.match(/^\[([^\]]+)\]\s*(.*)/);
+        if (m) {
+          return '<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">'
+            + '<span style="font-size:11px;color:var(--text3);white-space:nowrap;padding-top:1px">' + escH(m[1]) + '</span>'
+            + '<span style="font-size:13px;color:var(--text)">' + escH(m[2]) + '</span>'
+            + '</div>';
+        }
+        return '<div style="font-size:13px;color:var(--text);padding:5px 0">' + escH(e) + '</div>';
+      }).join('');
+    }
+    return '<div style="grid-column:1/-1">'
+      + '<div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.8px;margin-bottom:8px;text-transform:uppercase">📈 TIẾN ĐỘ</div>'
+      + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;max-height:200px;overflow-y:auto">' + inner + '</div>'
+      + '</div>';
+  }
+
   function _field(label, val, fullWidth, pre) {
     var valHtml = (pre && val && val !== '—')
       ? '<div style="white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.6;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--border);max-height:160px;overflow-y:auto">' + escH(String(val)) + '</div>'
@@ -1971,7 +2002,7 @@ function openTaskDetail(i) {
     + _field('TG THỰC HIỆN (NGÀY)',  r.tg  || '—')
     + _field('NGÀY HOÀN THÀNH',      r.ngay|| '—')
     + _field('TRẠNG THÁI',           STA_MAP[r.ts] || r.ts || '—')
-    + _field('GHI CHÚ',             r.gc  || '—', true)
+    + _tdFieldTienDo(r.gc)
     + '</div>';
 
   document.getElementById('tdBody').innerHTML = html;
@@ -2027,6 +2058,10 @@ function openEditTask(i) {
 
   // Chi tiết
   if (document.getElementById('ctCd')) document.getElementById('ctCd').value = r.cd || '';
+  // Tiến độ: hiện log cũ, clear ô nhập mới
+  _showGcLog(r.gc || '');
+  document.getElementById('ctGc').value = '';
+  document.getElementById('ctGc').placeholder = 'Nhập cập nhật tiến độ mới... (để trống nếu không có gì thêm)';
 
   // Đổi title và nút submit sang Edit mode
   document.querySelector('#createTaskModal .modal-title-txt').textContent = '✏️ Chỉnh sửa Task #' + (i + 1);
@@ -2053,7 +2088,7 @@ function submitEditTask() {
     tg:  document.getElementById('ctTg').value.trim(),
     ngay:ngayFmt,
     ts:  document.getElementById('ctTs').value,
-    gc:  document.getElementById('ctGc').value.trim(),
+    gc:  _appendTienDo(rows[_tdIdx].gc||'', document.getElementById('ctGc').value.trim()),
     cd:  document.getElementById('ctCd') ? document.getElementById('ctCd').value.trim() : (rows[_tdIdx].cd||'')
   };
   mark(); renderTable();
@@ -2096,6 +2131,24 @@ function closeCreateTask() {
   document.body.style.overflow = '';
 }
 
+
+function _appendTienDo(existing, newText) {
+  if (!newText || !newText.trim()) return existing || '';
+  var now = new Date();
+  var pad = function(n){ return n < 10 ? '0'+n : n; };
+  var ts = pad(now.getDate())+'/'+pad(now.getMonth()+1)+'/'+now.getFullYear()
+         + ' '+pad(now.getHours())+':'+pad(now.getMinutes());
+  var entry = '[' + ts + '] ' + newText.trim();
+  return existing ? existing + '\n' + entry : entry;
+}
+
+function _showGcLog(logText) {
+  var logEl = document.getElementById('ctGcLog');
+  if (!logEl) return;
+  if (logText && logText.trim()) { logEl.textContent = logText; logEl.style.display = 'block'; }
+  else { logEl.style.display = 'none'; }
+}
+
 function submitCreateTask() {
   var mt = document.getElementById('ctMt').value.trim();
   if (!mt) { document.getElementById('ctMt').focus(); showToast('Vui lòng nhập Mô tả!', 'err'); return; }
@@ -2110,7 +2163,7 @@ function submitCreateTask() {
     tg:   document.getElementById('ctTg').value.trim(),
     ngay: ngayFmt,
     ts:   document.getElementById('ctTs').value,
-    gc:   document.getElementById('ctGc').value.trim(),
+    gc:   _appendTienDo('', document.getElementById('ctGc').value.trim()),
     cd:   document.getElementById('ctCd') ? document.getElementById('ctCd').value.trim() : ''
   });
   mark(); renderTable();
