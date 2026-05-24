@@ -559,6 +559,21 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
       <button class="btn btn-success btn-sm" id="btnSaveTop" onclick="saveData()" disabled style="margin-left:8px">☁ Lưu lên Google Sheets</button>
     </div>
 
+    <!-- BANNER: Tuần mới chưa được tạo -->
+    <div id="newWeekBanner" style="display:none;background:linear-gradient(90deg,#F97316,#EF4444);color:#fff;padding:12px 20px;border-radius:10px;margin-bottom:16px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">📅</span>
+        <div>
+          <div style="font-weight:700;font-size:14px" id="newWeekBannerTitle">Tuần mới chưa được tạo!</div>
+          <div style="font-size:12px;opacity:.9" id="newWeekBannerSub">Hôm nay đã bắt đầu tuần mới, bấm nút để tạo ngay.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button onclick="createCurrentWeekNow()" id="newWeekBannerBtn" style="background:#fff;color:#F97316;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">📅 Tạo tuần mới ngay</button>
+        <button onclick="document.getElementById('newWeekBanner').style.display='none'" style="background:rgba(255,255,255,0.2);color:#fff;border:none;padding:8px 10px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1">✕</button>
+      </div>
+    </div>
+
     <!-- STATS -->
     <div class="stats-grid">
       <div class="stat-card">
@@ -1618,7 +1633,16 @@ function fetchWeeks() {
     buildWeekSel();
     setSyncStatus('ok', 'Đã kết nối Sheets');
     showToast('Đã tải '+weeksList.length+' tuần từ Google Sheets','ok');
+    // Kiểm tra tuần hiện tại có tồn tại chưa
+    setTimeout(checkCurrentWeekBanner, 500);
   });
+}
+
+function loadWeeksList(cb) {
+  apiGet({action:'getWeeks'}, function(data) {
+    if (data && data.weeks) { weeksList = data.weeks; buildWeekSel(); }
+    if (cb) cb();
+  }, function(){ if(cb) cb(); });
 }
 
 function reloadFromSheet() {
@@ -3592,7 +3616,65 @@ function readTicketFromDrive() {
 </script>
 
 <script>
-// Load GAS version khi trang khoi dong
+
+// ── KIỂM TRA TUẦN HIỆN TẠI ──
+function _getWeekName(date) {
+  // Tìm thứ Hai của tuần chứa date
+  var d = new Date(date);
+  var day = d.getDay(); // 0=CN, 1=T2...
+  var diff = (day === 0) ? -6 : 1 - day; // Đưa về T2
+  d.setDate(d.getDate() + diff);
+  var mon = d;
+  var sun = new Date(d); sun.setDate(mon.getDate() + 6);
+  var pad = function(n){ return n < 10 ? '0'+n : n; };
+  var fmt = function(dt){ return pad(dt.getDate())+'/'+(pad(dt.getMonth()+1))+'/'+dt.getFullYear(); };
+  var fmtShort = function(dt){ return pad(dt.getDate())+'/'+(pad(dt.getMonth()+1)); };
+  // Nếu cùng tháng: "17-23/05/2026", khác tháng: "26/04-02/05/2026"
+  if (mon.getMonth() === sun.getMonth()) {
+    return pad(mon.getDate()) + '-' + pad(sun.getDate()) + '/' + pad(mon.getMonth()+1) + '/' + mon.getFullYear();
+  } else {
+    return fmtShort(mon) + '-' + fmtShort(sun) + '/' + sun.getFullYear();
+  }
+}
+
+function checkCurrentWeekBanner() {
+  if (!apiUrl) return;
+  var todayWeek = _getWeekName(new Date());
+  // Nếu tuần hiện tại đã có trong weeksList → không cần tạo
+  if (weeksList && weeksList.indexOf(todayWeek) >= 0) return;
+  // Hiện banner
+  var banner = document.getElementById('newWeekBanner');
+  var sub    = document.getElementById('newWeekBannerSub');
+  if (banner) {
+    document.getElementById('newWeekBannerTitle').textContent = 'Tuần ' + todayWeek + ' chưa được tạo!';
+    if (sub) sub.textContent = 'Hôm nay đã bắt đầu tuần mới. Nhấn để tạo và chuyển sang tuần ' + todayWeek + '.';
+    banner.style.display = 'flex';
+  }
+}
+
+function createCurrentWeekNow() {
+  var todayWeek = _getWeekName(new Date());
+  var btn = document.getElementById('newWeekBannerBtn');
+  if (btn) { btn.textContent = '⏳ Đang tạo...'; btn.disabled = true; }
+  apiGet({ action: 'checkCurrentWeek' }, function(res) {
+    if (res && (res.created || res.exists)) {
+      document.getElementById('newWeekBanner').style.display = 'none';
+      // Reload weeksList và chuyển sang tuần mới
+      loadWeeksList(function() {
+        if (weeksList.indexOf(todayWeek) >= 0) switchWeek(todayWeek);
+      });
+      showToast(res.created ? 'Đã tạo tuần ' + (res.weekName || todayWeek) + '!' : 'Tuần đã tồn tại, đang chuyển...', 'ok');
+    } else {
+      showToast('Lỗi tạo tuần: ' + (res && res.error || ''), 'err');
+      if (btn) { btn.textContent = '📅 Tạo tuần mới ngay'; btn.disabled = false; }
+    }
+  }, function() {
+    showToast('Lỗi kết nối GAS', 'err');
+    if (btn) { btn.textContent = '📅 Tạo tuần mới ngay'; btn.disabled = false; }
+  });
+}
+
+// ── LOAD GAS VERSION ──
 function loadGasVersion() {
   apiGet({ action: 'getVersion', callback: 'cb' }, function(res) {
     if (res && res.version) {
