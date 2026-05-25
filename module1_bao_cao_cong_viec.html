@@ -559,20 +559,6 @@ html.dark-init body .cin,body.dark .cin{color:#E8E6FF !important;caret-color:#E8
       <button class="btn btn-success btn-sm" id="btnSaveTop" onclick="saveData()" disabled style="margin-left:8px">☁ Lưu lên Google Sheets</button>
     </div>
 
-    <!-- BANNER: Tuần mới chưa được tạo -->
-    <div id="newWeekBanner" style="display:none;background:linear-gradient(90deg,#F97316,#EF4444);color:#fff;padding:12px 20px;border-radius:10px;margin-bottom:16px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:22px">📅</span>
-        <div>
-          <div style="font-weight:700;font-size:14px" id="newWeekBannerTitle">Tuần mới chưa được tạo!</div>
-          <div style="font-size:12px;opacity:.9" id="newWeekBannerSub">Hôm nay đã bắt đầu tuần mới, bấm nút để tạo ngay.</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0">
-        <button onclick="createCurrentWeekNow()" id="newWeekBannerBtn" style="background:#fff;color:#F97316;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">📅 Tạo tuần mới ngay</button>
-        <button onclick="document.getElementById('newWeekBanner').style.display='none'" style="background:rgba(255,255,255,0.2);color:#fff;border:none;padding:8px 10px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1">✕</button>
-      </div>
-    </div>
 
     <!-- STATS -->
     <div class="stats-grid">
@@ -1633,8 +1619,7 @@ function fetchWeeks() {
     buildWeekSel();
     setSyncStatus('ok', 'Đã kết nối Sheets');
     showToast('Đã tải '+weeksList.length+' tuần từ Google Sheets','ok');
-    // Kiểm tra tuần hiện tại có tồn tại chưa
-    setTimeout(checkCurrentWeekBanner, 500);
+
   });
 }
 
